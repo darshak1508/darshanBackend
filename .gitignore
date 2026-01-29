@@ -2,8 +2,7 @@
 node_modules/
 package-lock.json
 
-# Environment variables (contains sensitive data)
-.env
+
 
 # Logs
 logs
