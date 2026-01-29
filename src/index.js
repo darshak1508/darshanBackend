@@ -1,7 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { sequelize } = require('./models');
+const { connectDB } = require('./models');
+const authMiddleware = require('./middleware/auth');
+const authRoutes = require('./routes/authRoutes');
 const firmRoutes = require('./routes/firmRoutes');
 const pricingRoutes = require('./routes/pricingRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
@@ -14,30 +16,28 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/firm', firmRoutes);
-app.use('/api/pricing', pricingRoutes);
-app.use('/api/transaction', transactionRoutes);
-app.use('/api/vehicle', vehicleRoutes);
+// Public routes (no authentication required)
+app.use('/api/auth', authRoutes);
+
+// Protected routes (authentication required)
+app.use('/api/firm', authMiddleware, firmRoutes);
+app.use('/api/pricing', authMiddleware, pricingRoutes);
+app.use('/api/transaction', authMiddleware, transactionRoutes);
+app.use('/api/vehicle', authMiddleware, vehicleRoutes);
 
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
-    // Add console.log to debug environment variables
-    console.log('Database Config:', {
-      database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-      host: process.env.DB_HOST
-    });
+    // Connect to MongoDB
+    await connectDB();
 
-    await sequelize.sync();
-    console.log('Database connected successfully.');
-    
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('Unable to connect to the database:', error);
+    console.error('Unable to start server:', error);
+    process.exit(1);
   }
 }
 

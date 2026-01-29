@@ -1,50 +1,54 @@
-const { DataTypes } = require('sequelize');
+const mongoose = require('mongoose');
 
-module.exports = (sequelize) => {
-  const Firm = sequelize.define('Firm', {
-    FirmID: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-      field: 'FirmID'
-    },
-    FirmName: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      field: 'FirmName'
-    },
-    ContactPerson: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      field: 'ContactPerson'
-    },
-    Address: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      field: 'Address'
-    },
-    City: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      field: 'City'
-    },
-    PhoneNumber: {
-      type: DataTypes.STRING(10),
-      allowNull: false,
-      field: 'PhoneNumber'
-    },
-    Email: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      validate: {
-        isEmail: true
+const firmSchema = new mongoose.Schema({
+  FirmID: {
+    type: Number,
+    unique: true
+  },
+  FirmName: {
+    type: String,
+    required: true
+  },
+  ContactPerson: {
+    type: String,
+    default: null
+  },
+  Address: {
+    type: String,
+    default: null
+  },
+  City: {
+    type: String,
+    default: null
+  },
+  PhoneNumber: {
+    type: String,
+    required: true,
+    maxlength: 10
+  },
+  Email: {
+    type: String,
+    default: null,
+    validate: {
+      validator: function (v) {
+        return !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
       },
-      field: 'Email'
+      message: props => `${props.value} is not a valid email!`
     }
-  }, {
-    tableName: 'Firms',
-    timestamps: false
-  });
+  }
+}, {
+  collection: 'Firms',
+  timestamps: false,
+  versionKey: false
+});
 
-  return Firm;
-}; 
+// Auto-increment FirmID
+firmSchema.pre('save', async function (next) {
+  if (!this.FirmID) {
+    const lastFirm = await this.constructor.findOne({}, {}, { sort: { 'FirmID': -1 } });
+    this.FirmID = lastFirm ? lastFirm.FirmID + 1 : 1;
+  }
+  next();
+});
+
+module.exports = mongoose.model('Firm', firmSchema);

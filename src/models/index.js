@@ -1,50 +1,37 @@
-const { Sequelize } = require('sequelize');
-const FirmModel = require('./firm');
-const PricingModel = require('./pricing');
-const TransactionModel = require('./transaction');
-const VehicleModel = require('./vehicle');
+const mongoose = require('mongoose');
 
-if (!process.env.DB_NAME || !process.env.DB_USER || !process.env.DB_PASS) {
-  throw new Error('Database configuration not found in environment variables');
+// Import models
+const Firm = require('./firm');
+const Pricing = require('./pricing');
+const Transaction = require('./transaction');
+const Vehicle = require('./vehicle');
+const User = require('./user');
+
+// Check for required environment variable
+if (!process.env.MONGO_URI) {
+  throw new Error('MONGO_URI not found in environment variables');
 }
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASS,
-  {
-    host: process.env.DB_HOST,
-    dialect: 'mysql',
-    logging: true, // Enable logging temporarily for debugging
-    port: 3306,
-    dialectOptions: {
-      ssl: false
-    }
+// MongoDB connection
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log('MongoDB connected successfully.');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw error;
   }
-);
-
-const Firm = FirmModel(sequelize);
-const Pricing = PricingModel(sequelize);
-const Transaction = TransactionModel(sequelize);
-const Vehicle = VehicleModel(sequelize);
-
-// Define relationships
-Firm.hasOne(Pricing, { foreignKey: 'FirmID' });
-Pricing.belongsTo(Firm, { foreignKey: 'FirmID' });
-
-Firm.hasMany(Transaction, { foreignKey: 'FirmID' });
-Transaction.belongsTo(Firm, { foreignKey: 'FirmID' });
-
-Firm.hasMany(Vehicle, { foreignKey: 'FirmID' });
-Vehicle.belongsTo(Firm, { foreignKey: 'FirmID' });
-
-Vehicle.hasMany(Transaction, { foreignKey: 'VehicleID' });
-Transaction.belongsTo(Vehicle, { foreignKey: 'VehicleID' });
+};
 
 module.exports = {
-  sequelize,
+  connectDB,
+  mongoose,
   Firm,
   Pricing,
   Transaction,
-  Vehicle
-}; 
+  Vehicle,
+  User
+};

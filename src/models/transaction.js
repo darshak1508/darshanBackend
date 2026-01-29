@@ -1,81 +1,71 @@
-const { DataTypes } = require('sequelize');
+const mongoose = require('mongoose');
 
-module.exports = (sequelize) => {
-  const Transaction = sequelize.define('Transaction', {
-    TransactionID: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-      field: 'TransactionID'
-    },
-    FirmID: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      field: 'FirmID',
-      references: {
-        model: 'Firms',
-        key: 'FirmID'
-      }
-    },
-    VehicleID: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      field: 'VehicleID',
-      references: {
-        model: 'Vehicles',
-        key: 'VehicleID'
-      }
-    },
-    RoNumber: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      field: 'RoNumber'
-    },
-    RoTon: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      field: 'RoTon',
-      get() {
-        return Number(this.getDataValue('RoTon'));
-      }
-    },
-    TotalTon: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-      field: 'TotalTon',
-      get() {
-        return Number(this.getDataValue('TotalTon'));
-      }
-    },
-    OpenTon: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      field: 'OpenTon'
-    },
-    RoPrice: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      field: 'RoPrice'
-    },
-    OpenPrice: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      field: 'OpenPrice'
-    },
-    TotalPrice: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      field: 'TotalPrice'
-    },
-    TransactionDate: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      field: 'TransactionDate'
-    }
-  }, {
-    tableName: 'Transactions',
-    timestamps: false
-  });
+const transactionSchema = new mongoose.Schema({
+  TransactionID: {
+    type: Number,
+    unique: true
+  },
+  FirmID: {
+    type: Number,
+    required: true
+  },
+  VehicleID: {
+    type: Number,
+    required: true
+  },
+  RoNumber: {
+    type: String,
+    required: true
+  },
+  RoTon: {
+    type: mongoose.Schema.Types.Decimal128,
+    required: true,
+    get: (v) => parseFloat(v.toString())
+  },
+  TotalTon: {
+    type: mongoose.Schema.Types.Decimal128,
+    required: true,
+    get: (v) => parseFloat(v.toString())
+  },
+  OpenTon: {
+    type: mongoose.Schema.Types.Decimal128,
+    required: true,
+    get: (v) => parseFloat(v.toString())
+  },
+  RoPrice: {
+    type: mongoose.Schema.Types.Decimal128,
+    required: true,
+    get: (v) => parseFloat(v.toString())
+  },
+  OpenPrice: {
+    type: mongoose.Schema.Types.Decimal128,
+    required: true,
+    get: (v) => parseFloat(v.toString())
+  },
+  TotalPrice: {
+    type: mongoose.Schema.Types.Decimal128,
+    required: true,
+    get: (v) => parseFloat(v.toString())
+  },
+  TransactionDate: {
+    type: Date,
+    required: true
+  }
+}, {
+  collection: 'Transactions',
+  timestamps: false,
+  versionKey: false,
+  toJSON: { getters: true },
+  toObject: { getters: true }
+});
 
-  return Transaction;
-}; 
+// Auto-increment TransactionID
+transactionSchema.pre('save', async function (next) {
+  if (!this.TransactionID) {
+    const lastTransaction = await this.constructor.findOne({}, {}, { sort: { 'TransactionID': -1 } });
+    this.TransactionID = lastTransaction ? lastTransaction.TransactionID + 1 : 1;
+  }
+  next();
+});
+
+module.exports = mongoose.model('Transaction', transactionSchema);

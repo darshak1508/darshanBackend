@@ -1,41 +1,43 @@
-const { DataTypes } = require('sequelize');
+const mongoose = require('mongoose');
 
-module.exports = (sequelize) => {
-  const Pricing = sequelize.define('Pricing', {
-    PricingID: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-      field: 'PricingID'
-    },
-    FirmID: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      field: 'FirmID',
-      references: {
-        model: 'Firms',
-        key: 'FirmID'
-      }
-    },
-    RoTonPrice: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-      field: 'RoTonPrice'
-    },
-    OpenTonPrice: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
-      field: 'OpenTonPrice'
-    },
-    EffectiveDate: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      field: 'EffectiveDate'
-    }
-  }, {
-    tableName: 'Pricing',
-    timestamps: false
-  });
+const pricingSchema = new mongoose.Schema({
+  PricingID: {
+    type: Number,
+    unique: true
+  },
+  FirmID: {
+    type: Number,
+    required: true
+  },
+  RoTonPrice: {
+    type: mongoose.Schema.Types.Decimal128,
+    required: true,
+    get: (v) => parseFloat(v.toString())
+  },
+  OpenTonPrice: {
+    type: mongoose.Schema.Types.Decimal128,
+    required: true,
+    get: (v) => parseFloat(v.toString())
+  },
+  EffectiveDate: {
+    type: Date,
+    required: true
+  }
+}, {
+  collection: 'Pricing',
+  timestamps: false,
+  versionKey: false,
+  toJSON: { getters: true },
+  toObject: { getters: true }
+});
 
-  return Pricing;
-}; 
+// Auto-increment PricingID
+pricingSchema.pre('save', async function (next) {
+  if (!this.PricingID) {
+    const lastPricing = await this.constructor.findOne({}, {}, { sort: { 'PricingID': -1 } });
+    this.PricingID = lastPricing ? lastPricing.PricingID + 1 : 1;
+  }
+  next();
+});
+
+module.exports = mongoose.model('Pricing', pricingSchema);

@@ -1,41 +1,42 @@
-const { DataTypes } = require('sequelize');
+const mongoose = require('mongoose');
 
-module.exports = (sequelize) => {
-  const Vehicle = sequelize.define('Vehicle', {
-    VehicleID: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-      field: 'VehicleID'
-    },
-    VehicleNo: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      field: 'VehicleNo'
-    },
-    DriverNumber: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      field: 'DriverNumber'
-    },
-    OwnerName: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      field: 'OwnerName'
-    },
-    FirmID: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      field: 'FirmID',
-      references: {
-        model: 'Firms',
-        key: 'FirmID'
-      }
-    }
-  }, {
-    tableName: 'Vehicles',
-    timestamps: false
-  });
+const vehicleSchema = new mongoose.Schema({
+  VehicleID: {
+    type: Number,
+    unique: true
+  },
+  VehicleNo: {
+    type: String,
+    required: true,
+    maxlength: 50
+  },
+  DriverNumber: {
+    type: String,
+    required: true,
+    maxlength: 50
+  },
+  OwnerName: {
+    type: String,
+    required: true,
+    maxlength: 100
+  },
+  FirmID: {
+    type: Number,
+    required: true
+  }
+}, {
+  collection: 'Vehicles',
+  timestamps: false,
+  versionKey: false
+});
 
-  return Vehicle;
-}; 
+// Auto-increment VehicleID
+vehicleSchema.pre('save', async function (next) {
+  if (!this.VehicleID) {
+    const lastVehicle = await this.constructor.findOne({}, {}, { sort: { 'VehicleID': -1 } });
+    this.VehicleID = lastVehicle ? lastVehicle.VehicleID + 1 : 1;
+  }
+  next();
+});
+
+module.exports = mongoose.model('Vehicle', vehicleSchema);
