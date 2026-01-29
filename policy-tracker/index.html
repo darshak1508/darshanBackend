@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Policy & Finance Tracking System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1; --primary-light: #818cf8; --primary-dark: #4f46e5; --primary-bg: rgba(99, 102, 241, 0.1);
+            --success: #22c55e; --success-bg: rgba(34, 197, 94, 0.1);
+            --warning: #f59e0b; --warning-bg: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444; --danger-bg: rgba(239, 68, 68, 0.1);
+            --info: #3b82f6; --info-bg: rgba(59, 130, 246, 0.1);
+            --purple: #a855f7; --purple-bg: rgba(168, 85, 247, 0.1);
+            --cyan: #06b6d4; --cyan-bg: rgba(6, 182, 212, 0.1);
+            --bg-dark: #0f172a; --bg-card: #1e293b; --bg-card-hover: #334155; --bg-input: #0f172a;
+            --border: #334155; --border-light: #475569;
+            --text-primary: #f8fafc; --text-secondary: #94a3b8; --text-muted: #64748b;
+            --radius: 10px; --radius-lg: 16px;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-primary); min-height: 100vh; line-height: 1.5; }
+        .app-container { display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { width: 240px; background: var(--bg-card); border-right: 1px solid var(--border); position: fixed; height: 100vh; z-index: 100; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 1rem; border-bottom: 1px solid var(--border); }
+        .logo { display: flex; align-items: center; gap: 0.6rem; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--purple)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; }
+        .logo-text { font-size: 1rem; font-weight: 700; background: linear-gradient(135deg, var(--primary-light), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .sidebar-nav { flex: 1; padding: 0.75rem; overflow-y: auto; }
+        .nav-section { margin-bottom: 1rem; }
+        .nav-section-title { font-size: 0.6rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; padding: 0 0.6rem; margin-bottom: 0.4rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem; border-radius: 8px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; margin-bottom: 0.15rem; font-size: 0.85rem; }
+        .nav-item:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .nav-item.active { background: var(--primary-bg); color: var(--primary-light); }
+        .nav-item i { font-size: 1.1rem; width: 20px; }
+        .nav-badge { margin-left: auto; background: var(--primary); color: white; font-size: 0.6rem; padding: 0.1rem 0.4rem; border-radius: 50px; font-weight: 600; }
+
+        /* Main */
+        .main-content { flex: 1; margin-left: 240px; min-height: 100vh; }
+        .top-header { background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .page-title { font-size: 1.2rem; font-weight: 700; }
+        .header-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+        .header-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .page-content { padding: 1.25rem; }
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Filter Bar */
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; align-items: center; }
+        .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
+        .filter-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+        .filter-select { padding: 0.5rem 0.75rem; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 0.8rem; min-width: 130px; cursor: pointer; }
+        .filter-select:focus { outline: none; border-color: var(--primary); }
+        .filter-reset { padding: 0.5rem 1rem; background: var(--danger-bg); color: var(--danger); border: none; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: 600; margin-left: auto; }
+        .filter-reset:hover { background: var(--danger); color: white; }
+
+        /* Summary */
+        .summary-section { margin-bottom: 1.5rem; }
+        .summary-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; }
+        .summary-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; cursor: pointer; transition: all 0.2s; }
+        .summary-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .summary-card-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 0.5rem; }
+        .summary-card-icon.company { background: var(--purple-bg); color: var(--purple); }
+        .summary-card-icon.bank { background: var(--info-bg); color: var(--info); }
+        .summary-card-icon.member { background: var(--success-bg); color: var(--success); }
+        .summary-card-name { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .summary-card-value { font-size: 1.1rem; font-weight: 800; color: var(--success); }
+        .summary-card-count { font-size: 0.65rem; color: var(--text-muted); }
+
+        /* Stats */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; position: relative; overflow: hidden; }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .stat-card.primary::before { background: var(--primary); }
+        .stat-card.success::before { background: var(--success); }
+        .stat-card.warning::before { background: var(--warning); }
+        .stat-card.purple::before { background: var(--purple); }
+        .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .stat-card.primary .stat-icon { background: var(--primary-bg); color: var(--primary); }
+        .stat-card.success .stat-icon { background: var(--success-bg); color: var(--success); }
+        .stat-card.warning .stat-icon { background: var(--warning-bg); color: var(--warning); }
+        .stat-card.purple .stat-icon { background: var(--purple-bg); color: var(--purple); }
+        .stat-value { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.1rem; }
+        .stat-label { font-size: 0.75rem; color: var(--text-secondary); }
+
+        /* Year Nav */
+        .year-nav { display: flex; align-items: center; gap: 0.75rem; }
+        .year-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .year-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .year-display { font-size: 1.25rem; font-weight: 800; min-width: 70px; text-align: center; }
+
+        /* Month Cards */
+        .months-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .month-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .month-card-header { padding: 0.85rem 1rem; background: var(--bg-card-hover); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .month-name { font-size: 0.95rem; font-weight: 700; }
+        .month-total { font-size: 0.95rem; font-weight: 700; color: var(--success); }
+        .month-card-body { padding: 0; max-height: 320px; overflow-y: auto; }
+        
+        /* Premium Item */
+        .premium-item { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); transition: all 0.2s; }
+        .premium-item:last-child { border-bottom: none; }
+        .premium-item:hover { background: var(--bg-card-hover); }
+        .premium-top { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+        .premium-avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.65rem; flex-shrink: 0; }
+        .premium-avatar.blue { background: var(--info-bg); color: var(--info); }
+        .premium-avatar.purple { background: var(--purple-bg); color: var(--purple); }
+        .premium-avatar.green { background: var(--success-bg); color: var(--success); }
+        .premium-avatar.orange { background: var(--warning-bg); color: var(--warning); }
+        .premium-avatar.cyan { background: var(--cyan-bg); color: var(--cyan); }
+        .premium-main { flex: 1; min-width: 0; }
+        .premium-member-name { font-weight: 700; font-size: 0.85rem; }
+        .premium-company-name { font-size: 0.7rem; color: var(--purple); font-weight: 600; }
+        .premium-amount-box { text-align: right; }
+        .premium-amount { font-weight: 800; color: var(--success); font-size: 0.95rem; }
+        .premium-date { font-size: 0.6rem; color: var(--text-muted); }
+        .premium-bank-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem; background: var(--bg-dark); border-radius: 6px; margin-top: 0.4rem; }
+        .bank-icon { color: var(--info); font-size: 0.85rem; }
+        .bank-name { font-size: 0.7rem; font-weight: 600; color: var(--info); }
+        .bank-account { font-size: 0.6rem; color: var(--text-muted); margin-left: 0.25rem; }
+        .payment-badge { font-size: 0.55rem; font-weight: 600; padding: 0.15rem 0.4rem; border-radius: 4px; text-transform: uppercase; margin-left: auto; }
+        .payment-badge.cheque { background: var(--warning-bg); color: var(--warning); }
+        .payment-badge.online { background: var(--info-bg); color: var(--info); }
+        .payment-badge.bank { background: var(--success-bg); color: var(--success); }
+        .no-premiums { padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; }
+
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.55rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; border: none; transition: all 0.2s; font-family: inherit; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .btn-success { background: linear-gradient(135deg, var(--success), #16a34a); color: white; }
+        .btn-secondary { background: var(--bg-card-hover); color: var(--text-primary); border: 1px solid var(--border); }
+        .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.4rem 0.6rem; }
+        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-sm { padding: 0.35rem 0.6rem; font-size: 0.7rem; }
+        .btn-icon { width: 28px; height: 28px; padding: 0; }
+
+        /* Section */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+        .section-title { font-size: 1.1rem; font-weight: 700; }
+        .section-subtitle { color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.1rem; }
+
+        /* Cards */
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+        .entity-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; transition: all 0.2s; }
+        .entity-card:hover { border-color: var(--border-light); }
+        .entity-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+        .entity-icon { width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .entity-icon.bank { background: var(--info-bg); color: var(--info); }
+        .entity-icon.policy { background: var(--purple-bg); color: var(--purple); }
+        .entity-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.15rem; }
+        .entity-subtitle { font-size: 0.75rem; color: var(--text-secondary); }
+        .entity-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+        .meta-item { display: flex; flex-direction: column; }
+        .meta-label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; }
+        .meta-value { font-weight: 600; font-size: 0.8rem; }
+
+        /* Badge */
+        .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; border-radius: 50px; font-size: 0.6rem; font-weight: 600; text-transform: uppercase; }
+        .badge-monthly { background: var(--info-bg); color: var(--info); }
+        .badge-yearly { background: var(--purple-bg); color: var(--purple); }
+        .badge-quarterly { background: var(--warning-bg); color: var(--warning); }
+
+        /* Tables */
+        .detail-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .detail-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .detail-title { font-size: 1rem; font-weight: 700; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { text-align: left; padding: 0.75rem; background: var(--bg-dark); color: var(--text-secondary); font-weight: 600; font-size: 0.65rem; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .data-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+        .data-table tbody tr:hover { background: var(--bg-card-hover); }
+
+        /* Transaction Row */
+        .txn-credit td { background: rgba(34, 197, 94, 0.05); }
+        .txn-debit td { background: rgba(239, 68, 68, 0.03); }
+        .txn-type { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+        .txn-type.credit { background: var(--success-bg); color: var(--success); }
+        .txn-type.debit { background: var(--danger-bg); color: var(--danger); }
+        .txn-amount.credit { color: var(--success); font-weight: 700; }
+        .txn-amount.debit { color: var(--danger); font-weight: 700; }
+
+        /* Balance Card */
+        .balance-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer; transition: all 0.2s; }
+        .balance-card:hover { border-color: var(--primary); }
+        .balance-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .balance-bank-name { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; }
+        .balance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+        .balance-item { text-align: center; padding: 0.6rem; background: var(--bg-dark); border-radius: 8px; }
+        .balance-item-label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.2rem; }
+        .balance-item-value { font-size: 1rem; font-weight: 700; }
+        .balance-item-value.opening { color: var(--info); }
+        .balance-item-value.credit { color: var(--success); }
+        .balance-item-value.debit { color: var(--danger); }
+        .balance-item-value.closing { color: var(--purple); }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; animation: modalSlide 0.3s ease; }
+        .modal.wide { max-width: 800px; }
+        @keyframes modalSlide { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border); }
+        .modal-title { font-size: 1rem; font-weight: 700; }
+        .modal-close { width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .modal-close:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .modal-body { padding: 1rem; }
+        .modal-footer { padding: 0.85rem 1rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+        /* Forms */
+        .form-group { margin-bottom: 0.85rem; }
+        .form-label { display: block; font-weight: 500; margin-bottom: 0.3rem; color: var(--text-secondary); font-size: 0.75rem; }
+        .form-label span { color: var(--danger); }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 0.6rem 0.75rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 0.85rem; font-family: inherit; }
+        .form-textarea { min-height: 60px; resize: vertical; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-bg); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 2.5rem 1rem; background: var(--bg-card); border: 1px dashed var(--border); border-radius: 12px; }
+        .empty-state i { font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.5rem; opacity: 0.5; }
+        .empty-state h3 { font-size: 1rem; margin-bottom: 0.25rem; }
+        .empty-state p { color: var(--text-secondary); margin-bottom: 0.75rem; font-size: 0.8rem; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        /* Responsive */
+        @media (max-width: 1200px) { .stats-row { grid-template-columns: repeat(2, 1fr); } .months-grid { grid-template-columns: repeat(2, 1fr); } .balance-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .stats-row, .months-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } .filter-bar { flex-direction: column; } .balance-grid { grid-template-columns: 1fr; } }
+        @media print { .sidebar, .top-header, .btn, .filter-bar { display: none !important; } .main-content { margin-left: 0; } body { background: white; color: black; } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon"><i class="ri-shield-check-line"></i></div>
+                    <div class="logo-text">PolicyTrack</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Overview</div>
+                    <div class="nav-item active" data-page="dashboard"><i class="ri-dashboard-3-line"></i><span>Dashboard</span></div>
+                    <div class="nav-item" data-page="tracking"><i class="ri-calendar-check-line"></i><span>Premium Tracking</span></div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Finance</div>
+                    <div class="nav-item" data-page="bank-balance"><i class="ri-wallet-3-line"></i><span>Bank Balance</span></div>
+                    <div class="nav-item" data-page="transactions"><i class="ri-exchange-funds-line"></i><span>Transactions</span></div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Management</div>
+                    <div class="nav-item" data-page="members"><i class="ri-group-line"></i><span>Family Members</span><span class="nav-badge" id="memberCount">0</span></div>
+                    <div class="nav-item" data-page="banks"><i class="ri-bank-line"></i><span>Bank Accounts</span><span class="nav-badge" id="bankCount">0</span></div>
+                    <div class="nav-item" data-page="policies"><i class="ri-file-shield-2-line"></i><span>Policies</span><span class="nav-badge" id="policyCount">0</span></div>
+                    <div class="nav-item" data-page="premium-setup"><i class="ri-settings-4-line"></i><span>Premium Setup</span></div>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <h1 class="page-title" id="pageTitle">Dashboard</h1>
+                <button class="header-btn" onclick="printReport()"><i class="ri-printer-line"></i></button>
+            </header>
+
+            <div class="page-content">
+                <!-- Dashboard -->
+                <div id="page-dashboard" class="page active">
+                    <div class="stats-row">
+                        <div class="stat-card primary"><div class="stat-icon"><i class="ri-file-shield-2-line"></i></div><div class="stat-value" id="totalPolicies">0</div><div class="stat-label">Total Policies</div></div>
+                        <div class="stat-card success"><div class="stat-icon"><i class="ri-money-rupee-circle-line"></i></div><div class="stat-value" id="yearlyTotal">₹0</div><div class="stat-label">Yearly Premium</div></div>
+                        <div class="stat-card warning"><div class="stat-icon"><i class="ri-calendar-event-line"></i></div><div class="stat-value" id="thisMonthDue">₹0</div><div class="stat-label">Due This Month</div></div>
+                        <div class="stat-card purple"><div class="stat-icon"><i class="ri-group-line"></i></div><div class="stat-value" id="totalMembers">0</div><div class="stat-label">Family Members</div></div>
+                    </div>
+                    <div class="filter-bar">
+                        <div class="year-nav"><button class="year-btn" onclick="changeYear(-1)"><i class="ri-arrow-left-s-line"></i></button><div class="year-display" id="currentYear">2025</div><button class="year-btn" onclick="changeYear(1)"><i class="ri-arrow-right-s-line"></i></button></div>
+                        <div class="filter-group"><span class="filter-label">Member</span><select class="filter-select" id="dashFilterMember" onchange="renderDashboard()"><option value="all">All</option></select></div>
+                        <div class="filter-group"><span class="filter-label">Company</span><select class="filter-select" id="dashFilterCompany" onchange="renderDashboard()"><option value="all">All</option></select></div>
+                        <div class="filter-group"><span class="filter-label">Bank</span><select class="filter-select" id="dashFilterBank" onchange="renderDashboard()"><option value="all">All</option></select></div>
+                        <button class="filter-reset" onclick="resetFilters()"><i class="ri-refresh-line"></i> Reset</button>
+                    </div>
+                    <div class="summary-section"><div class="summary-title"><i class="ri-building-line"></i> By Company</div><div class="summary-grid" id="companySummary"></div></div>
+                    <div class="summary-section"><div class="summary-title"><i class="ri-bank-line"></i> By Bank</div><div class="summary-grid" id="bankSummary"></div></div>
+                    <div class="summary-section"><div class="summary-title"><i class="ri-group-line"></i> By Member</div><div class="summary-grid" id="memberSummary"></div></div>
+                    <div class="summary-title" style="margin-top:1rem;"><i class="ri-calendar-line"></i> Month-wise</div>
+                    <div class="months-grid" id="monthsGrid"></div>
+                </div>
+
+                <!-- Premium Tracking -->
+                <div id="page-tracking" class="page">
+                    <div class="section-header"><div><h2 class="section-title">Premium Tracking</h2><p class="section-subtitle">Detailed view</p></div></div>
+                    <div class="filter-bar">
+                        <div class="filter-group"><span class="filter-label">Month</span><select class="filter-select" id="filterMonth" onchange="renderDetailedTracking()"><option value="all">All</option></select></div>
+                        <div class="filter-group"><span class="filter-label">Member</span><select class="filter-select" id="filterMember" onchange="renderDetailedTracking()"><option value="all">All</option></select></div>
+                        <div class="filter-group"><span class="filter-label">Company</span><select class="filter-select" id="filterCompany" onchange="renderDetailedTracking()"><option value="all">All</option></select></div>
+                        <div class="filter-group"><span class="filter-label">Bank</span><select class="filter-select" id="filterBank" onchange="renderDetailedTracking()"><option value="all">All</option></select></div>
+                    </div>
+                    <div class="detail-section"><div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Name</th><th>Company</th><th>Policy No.</th><th>Date</th><th>Account</th><th>Bank</th><th>Payment</th><th style="text-align:right;">Premium</th></tr></thead><tbody id="detailedTrackingBody"></tbody></table></div></div>
+                </div>
+
+                <!-- Bank Balance -->
+                <div id="page-bank-balance" class="page">
+                    <div class="section-header">
+                        <div><h2 class="section-title">Bank Balance</h2><p class="section-subtitle">Click on bank to view transactions</p></div>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <select class="form-select" id="balanceYear" style="width:100px;" onchange="renderBankBalance()"></select>
+                            <button class="btn btn-success" onclick="openModal('depositModal')"><i class="ri-add-line"></i> Add Money</button>
+                        </div>
+                    </div>
+                    <div id="bankBalanceContainer"></div>
+                </div>
+
+                <!-- Transactions -->
+                <div id="page-transactions" class="page">
+                    <div class="section-header">
+                        <div><h2 class="section-title">Transaction History</h2><p class="section-subtitle">All bank transactions</p></div>
+                        <button class="btn btn-success" onclick="openModal('depositModal')"><i class="ri-add-line"></i> Add Money</button>
+                    </div>
+                    <div class="filter-bar">
+                        <div class="filter-group"><span class="filter-label">Bank</span><select class="filter-select" id="txnFilterBank" onchange="renderTransactions()"><option value="all">All Banks</option></select></div>
+                        <div class="filter-group"><span class="filter-label">Type</span><select class="filter-select" id="txnFilterType" onchange="renderTransactions()"><option value="all">All</option><option value="credit">Credit Only</option><option value="debit">Debit Only</option></select></div>
+                        <div class="filter-group"><span class="filter-label">Year</span><select class="filter-select" id="txnFilterYear" onchange="renderTransactions()"></select></div>
+                    </div>
+                    <div class="detail-section"><div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Date</th><th>Bank</th><th>Type</th><th>Description</th><th>Reference</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Balance</th></tr></thead><tbody id="transactionsBody"></tbody></table></div></div>
+                </div>
+
+                <!-- Members -->
+                <div id="page-members" class="page">
+                    <div class="section-header"><div><h2 class="section-title">Family Members</h2></div><button class="btn btn-primary" onclick="openModal('memberModal')"><i class="ri-add-line"></i> Add</button></div>
+                    <div class="cards-grid" id="membersList"></div>
+                </div>
+
+                <!-- Banks -->
+                <div id="page-banks" class="page">
+                    <div class="section-header"><div><h2 class="section-title">Bank Accounts</h2></div><button class="btn btn-primary" onclick="openModal('bankModal')"><i class="ri-add-line"></i> Add</button></div>
+                    <div class="cards-grid" id="banksList"></div>
+                </div>
+
+                <!-- Policies -->
+                <div id="page-policies" class="page">
+                    <div class="section-header"><div><h2 class="section-title">Policies</h2></div><button class="btn btn-primary" onclick="openModal('policyModal')"><i class="ri-add-line"></i> Add</button></div>
+                    <div class="cards-grid" id="policiesList"></div>
+                </div>
+
+                <!-- Premium Setup -->
+                <div id="page-premium-setup" class="page">
+                    <div class="section-header"><div><h2 class="section-title">Premium Setup</h2></div><button class="btn btn-primary" onclick="openModal('premiumSetupModal')"><i class="ri-add-line"></i> Setup</button></div>
+                    <div class="detail-section"><table class="data-table"><thead><tr><th>Member</th><th>Policy</th><th>Company</th><th>Policy No.</th><th>Bank</th><th>Payment</th><th>First Date</th><th>Frequency</th><th style="text-align:right;">Amount</th><th>Actions</th></tr></thead><tbody id="premiumSetupList"></tbody></table></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="memberModal"><div class="modal"><div class="modal-header"><h2 class="modal-title">Add Member</h2><button class="modal-close" onclick="closeModal('memberModal')"><i class="ri-close-line"></i></button></div><form id="memberForm" onsubmit="handleMemberSubmit(event)"><div class="modal-body"><div class="form-group"><label class="form-label">Name <span>*</span></label><input type="text" class="form-input" id="memberName" required></div><div class="form-row"><div class="form-group"><label class="form-label">Relation</label><select class="form-select" id="memberRelation"><option>Self</option><option>Spouse</option><option>Son</option><option>Daughter</option><option>Father</option><option>Mother</option></select></div><div class="form-group"><label class="form-label">Color</label><select class="form-select" id="memberColor"><option value="blue">Blue</option><option value="purple">Purple</option><option value="green">Green</option><option value="orange">Orange</option><option value="cyan">Cyan</option></select></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('memberModal')">Cancel</button><button type="submit" class="btn btn-primary">Add</button></div></form></div></div>
+
+    <div class="modal-overlay" id="bankModal"><div class="modal"><div class="modal-header"><h2 class="modal-title">Add Bank</h2><button class="modal-close" onclick="closeModal('bankModal')"><i class="ri-close-line"></i></button></div><form id="bankForm" onsubmit="handleBankSubmit(event)"><div class="modal-body"><div class="form-group"><label class="form-label">Bank Name <span>*</span></label><input type="text" class="form-input" id="bankName" required placeholder="e.g., PNB, AXIS"></div><div class="form-group"><label class="form-label">Account Number</label><input type="text" class="form-input" id="accountNumber" placeholder="Leave empty for Cheque"></div><div class="form-row"><div class="form-group"><label class="form-label">Opening Balance <span>*</span></label><input type="number" class="form-input" id="openingBalance" required value="0" min="0" step="0.01"></div><div class="form-group"><label class="form-label">Payment Method</label><select class="form-select" id="bankPaymentMethod"><option value="Cheque">Cheque</option><option value="Online">Online</option><option value="Bank">Bank Transfer</option></select></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('bankModal')">Cancel</button><button type="submit" class="btn btn-primary">Add</button></div></form></div></div>
+
+    <div class="modal-overlay" id="policyModal"><div class="modal"><div class="modal-header"><h2 class="modal-title">Add Policy</h2><button class="modal-close" onclick="closeModal('policyModal')"><i class="ri-close-line"></i></button></div><form id="policyForm" onsubmit="handlePolicySubmit(event)"><div class="modal-body"><div class="form-group"><label class="form-label">Policy Name <span>*</span></label><input type="text" class="form-input" id="policyName" required></div><div class="form-group"><label class="form-label">Company <span>*</span></label><input type="text" class="form-input" id="companyName" required placeholder="e.g., LIC, BAJAJ"></div><div class="form-group"><label class="form-label">Policy Number <span>*</span></label><input type="text" class="form-input" id="policyNumber" required></div><div class="form-row"><div class="form-group"><label class="form-label">Premium <span>*</span></label><input type="number" class="form-input" id="policyAmount" required min="0" step="0.01"></div><div class="form-group"><label class="form-label">Frequency <span>*</span></label><select class="form-select" id="policyFrequency" required><option value="">Select</option><option value="monthly">Monthly</option><option value="quarterly-3">Quarterly (3m)</option><option value="quarterly-4">Quarterly (4m)</option><option value="yearly">Yearly</option></select></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('policyModal')">Cancel</button><button type="submit" class="btn btn-primary">Add</button></div></form></div></div>
+
+    <div class="modal-overlay" id="premiumSetupModal"><div class="modal"><div class="modal-header"><h2 class="modal-title">Setup Premium</h2><button class="modal-close" onclick="closeModal('premiumSetupModal')"><i class="ri-close-line"></i></button></div><form id="premiumSetupForm" onsubmit="handlePremiumSetupSubmit(event)"><div class="modal-body"><div class="form-group"><label class="form-label">Member <span>*</span></label><select class="form-select" id="setupMember" required><option value="">Select</option></select></div><div class="form-group"><label class="form-label">Policy <span>*</span></label><select class="form-select" id="setupPolicy" required><option value="">Select</option></select></div><div class="form-group"><label class="form-label">Bank <span>*</span></label><select class="form-select" id="setupBank" required><option value="">Select</option></select></div><div class="form-row"><div class="form-group"><label class="form-label">Payment Method</label><select class="form-select" id="setupPaymentMethod"><option value="Cheque">Cheque</option><option value="Online">Online</option><option value="Bank">Bank Transfer</option></select></div><div class="form-group"><label class="form-label">First Premium Date <span>*</span></label><input type="date" class="form-input" id="firstPremiumDate" required></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('premiumSetupModal')">Cancel</button><button type="submit" class="btn btn-primary">Setup</button></div></form></div></div>
+
+    <!-- Deposit/Credit Modal -->
+    <div class="modal-overlay" id="depositModal"><div class="modal"><div class="modal-header"><h2 class="modal-title"><i class="ri-add-circle-line" style="color:var(--success);"></i> Add Money to Bank</h2><button class="modal-close" onclick="closeModal('depositModal')"><i class="ri-close-line"></i></button></div><form id="depositForm" onsubmit="handleDepositSubmit(event)"><div class="modal-body"><div class="form-group"><label class="form-label">Select Bank <span>*</span></label><select class="form-select" id="depositBank" required><option value="">Select Bank</option></select></div><div class="form-row"><div class="form-group"><label class="form-label">Amount <span>*</span></label><input type="number" class="form-input" id="depositAmount" required min="1" step="0.01" placeholder="₹0.00"></div><div class="form-group"><label class="form-label">Date <span>*</span></label><input type="date" class="form-input" id="depositDate" required></div></div><div class="form-group"><label class="form-label">Reference / Cheque No.</label><input type="text" class="form-input" id="depositReference" placeholder="e.g., CHQ-123456, NEFT-789"></div><div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="depositDescription" placeholder="e.g., Salary credited, Cash deposit"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('depositModal')">Cancel</button><button type="submit" class="btn btn-success"><i class="ri-add-line"></i> Add Money</button></div></form></div></div>
+
+    <!-- Bank History Modal -->
+    <div class="modal-overlay" id="bankHistoryModal"><div class="modal wide"><div class="modal-header"><h2 class="modal-title" id="bankHistoryTitle">Bank Statement</h2><button class="modal-close" onclick="closeModal('bankHistoryModal')"><i class="ri-close-line"></i></button></div><div class="modal-body"><div id="bankHistoryStats" style="margin-bottom:1rem;"></div><div class="detail-section"><div style="overflow-x:auto;max-height:400px;"><table class="data-table"><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Reference</th><th style="text-align:right;">Debit</th><th style="text-align:right;">Credit</th><th style="text-align:right;">Balance</th></tr></thead><tbody id="bankHistoryBody"></tbody></table></div></div></div></div></div>
+
+    <script>
+        // DATA
+        let members = JSON.parse(localStorage.getItem('pt_members') || '[]');
+        let banks = JSON.parse(localStorage.getItem('pt_banks') || '[]');
+        let policies = JSON.parse(localStorage.getItem('pt_policies') || '[]');
+        let premiumSetups = JSON.parse(localStorage.getItem('pt_setups') || '[]');
+        let transactions = JSON.parse(localStorage.getItem('pt_transactions') || '[]');
+        let currentYear = new Date().getFullYear();
+        let idCounters = JSON.parse(localStorage.getItem('pt_counters') || '{"member":1,"bank":1,"policy":1,"setup":1,"txn":1}');
+
+        function saveData() {
+            localStorage.setItem('pt_members', JSON.stringify(members));
+            localStorage.setItem('pt_banks', JSON.stringify(banks));
+            localStorage.setItem('pt_policies', JSON.stringify(policies));
+            localStorage.setItem('pt_setups', JSON.stringify(premiumSetups));
+            localStorage.setItem('pt_transactions', JSON.stringify(transactions));
+            localStorage.setItem('pt_counters', JSON.stringify(idCounters));
+        }
+
+        // NAV
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById(`page-${item.dataset.page}`).classList.add('active');
+                document.getElementById('pageTitle').textContent = item.querySelector('span').textContent;
+            });
+        });
+
+        // MODAL
+        function openModal(id) { document.getElementById(id).classList.add('active'); if(id==='premiumSetupModal') populateSetupDropdowns(); if(id==='depositModal') populateDepositDropdown(); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); document.getElementById(id).querySelector('form')?.reset(); }
+        document.querySelectorAll('.modal-overlay').forEach(o => { o.addEventListener('click', e => { if(e.target===o) closeModal(o.id); }); });
+
+        // MEMBERS
+        function handleMemberSubmit(e) { e.preventDefault(); members.push({id:idCounters.member++,name:document.getElementById('memberName').value.trim().toUpperCase(),relation:document.getElementById('memberRelation').value,color:document.getElementById('memberColor').value}); saveData(); closeModal('memberModal'); renderAll(); }
+        function deleteMember(id) { if(confirm('Delete?')) { members=members.filter(m=>m.id!==id); premiumSetups=premiumSetups.filter(p=>p.memberId!==id); saveData(); renderAll(); }}
+        function renderMembers() {
+            document.getElementById('memberCount').textContent = members.length;
+            const c = document.getElementById('membersList');
+            if(!members.length) { c.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="ri-group-line"></i><h3>No Members</h3><button class="btn btn-primary" onclick="openModal('memberModal')"><i class="ri-add-line"></i> Add</button></div>`; return; }
+            c.innerHTML = members.map(m => `<div class="entity-card"><div class="entity-header"><div style="display:flex;align-items:center;gap:0.6rem;"><div class="premium-avatar ${m.color}" style="width:38px;height:38px;">${m.name.substring(0,2)}</div><div><div class="entity-title">${m.name}</div><div class="entity-subtitle">${m.relation}</div></div></div><button class="btn btn-danger btn-sm btn-icon" onclick="deleteMember(${m.id})"><i class="ri-delete-bin-line"></i></button></div></div>`).join('');
+        }
+
+        // BANKS
+        function handleBankSubmit(e) { 
+            e.preventDefault(); 
+            const openingBal = parseFloat(document.getElementById('openingBalance').value)||0;
+            const bankId = idCounters.bank++;
+            banks.push({id:bankId,name:document.getElementById('bankName').value.trim().toUpperCase(),accountNumber:document.getElementById('accountNumber').value.trim(),openingBalance:openingBal,paymentMethod:document.getElementById('bankPaymentMethod').value});
+            // Add opening balance as first transaction
+            if(openingBal > 0) {
+                transactions.push({id:idCounters.txn++,bankId:bankId,type:'credit',amount:openingBal,date:new Date().toISOString().split('T')[0],reference:'OPENING',description:'Opening Balance'});
+            }
+            saveData(); closeModal('bankModal'); renderAll();
+        }
+        function deleteBank(id) { if(confirm('Delete?')) { banks=banks.filter(b=>b.id!==id); premiumSetups=premiumSetups.filter(p=>p.bankId!==id); transactions=transactions.filter(t=>t.bankId!==id); saveData(); renderAll(); }}
+        function renderBanks() {
+            document.getElementById('bankCount').textContent = banks.length;
+            const c = document.getElementById('banksList');
+            if(!banks.length) { c.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="ri-bank-line"></i><h3>No Banks</h3><button class="btn btn-primary" onclick="openModal('bankModal')"><i class="ri-add-line"></i> Add</button></div>`; return; }
+            c.innerHTML = banks.map(b => {
+                const bal = calculateBankBalance(b.id);
+                return `<div class="entity-card"><div class="entity-header"><div class="entity-icon bank"><i class="ri-bank-line"></i></div><button class="btn btn-danger btn-sm btn-icon" onclick="deleteBank(${b.id})"><i class="ri-delete-bin-line"></i></button></div><div class="entity-title">${b.name}</div><div class="entity-subtitle">${b.accountNumber||'Cheque'}</div><div class="entity-meta"><div class="meta-item"><span class="meta-label">Balance</span><span class="meta-value" style="color:${bal>=0?'var(--success)':'var(--danger)'}">₹${bal.toLocaleString('en-IN')}</span></div><div class="meta-item"><span class="meta-label">Method</span><span class="payment-badge ${b.paymentMethod.toLowerCase()}">${b.paymentMethod}</span></div></div></div>`;
+            }).join('');
+        }
+
+        // POLICIES
+        function handlePolicySubmit(e) { e.preventDefault(); policies.push({id:idCounters.policy++,name:document.getElementById('policyName').value.trim(),company:document.getElementById('companyName').value.trim().toUpperCase(),policyNumber:document.getElementById('policyNumber').value.trim(),amount:parseFloat(document.getElementById('policyAmount').value),frequency:document.getElementById('policyFrequency').value}); saveData(); closeModal('policyModal'); renderAll(); }
+        function deletePolicy(id) { if(confirm('Delete?')) { policies=policies.filter(p=>p.id!==id); premiumSetups=premiumSetups.filter(p=>p.policyId!==id); saveData(); renderAll(); }}
+        function getFreqLabel(f) { return {'monthly':'Monthly','yearly':'Yearly','quarterly-3':'3 Months','quarterly-4':'4 Months'}[f]||f; }
+        function getFreqBadge(f) { return f==='monthly'?'badge-monthly':f==='yearly'?'badge-yearly':'badge-quarterly'; }
+        function renderPolicies() {
+            document.getElementById('policyCount').textContent = policies.length;
+            const c = document.getElementById('policiesList');
+            if(!policies.length) { c.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="ri-file-shield-2-line"></i><h3>No Policies</h3><button class="btn btn-primary" onclick="openModal('policyModal')"><i class="ri-add-line"></i> Add</button></div>`; return; }
+            c.innerHTML = policies.map(p => `<div class="entity-card"><div class="entity-header"><div class="entity-icon policy"><i class="ri-file-shield-2-line"></i></div><button class="btn btn-danger btn-sm btn-icon" onclick="deletePolicy(${p.id})"><i class="ri-delete-bin-line"></i></button></div><div class="entity-title">${p.name}</div><div class="entity-subtitle">${p.company}</div><div class="entity-meta"><div class="meta-item"><span class="meta-label">Policy No.</span><span class="meta-value">${p.policyNumber}</span></div><div class="meta-item"><span class="meta-label">Premium</span><span class="meta-value" style="color:var(--success)">₹${p.amount.toLocaleString('en-IN')}</span></div><div class="meta-item"><span class="meta-label">Freq</span><span class="badge ${getFreqBadge(p.frequency)}">${getFreqLabel(p.frequency)}</span></div></div></div>`).join('');
+        }
+
+        // PREMIUM SETUP
+        function populateSetupDropdowns() {
+            document.getElementById('setupMember').innerHTML = '<option value="">Select</option>'+members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+            document.getElementById('setupPolicy').innerHTML = '<option value="">Select</option>'+policies.map(p=>`<option value="${p.id}">${p.company} - ${p.policyNumber}</option>`).join('');
+            document.getElementById('setupBank').innerHTML = '<option value="">Select</option>'+banks.map(b=>`<option value="${b.id}">${b.name} ${b.accountNumber?'('+b.accountNumber.slice(-4)+')':'(Cheque)'}</option>`).join('');
+        }
+        function handlePremiumSetupSubmit(e) { e.preventDefault(); premiumSetups.push({id:idCounters.setup++,memberId:parseInt(document.getElementById('setupMember').value),policyId:parseInt(document.getElementById('setupPolicy').value),bankId:parseInt(document.getElementById('setupBank').value),paymentMethod:document.getElementById('setupPaymentMethod').value,firstPremiumDate:document.getElementById('firstPremiumDate').value}); saveData(); closeModal('premiumSetupModal'); renderAll(); }
+        function deleteSetup(id) { if(confirm('Delete?')) { premiumSetups=premiumSetups.filter(p=>p.id!==id); saveData(); renderAll(); }}
+        function renderPremiumSetups() {
+            const c = document.getElementById('premiumSetupList');
+            if(!premiumSetups.length) { c.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-muted);">No setups</td></tr>`; return; }
+            c.innerHTML = premiumSetups.map(s => {
+                const m=members.find(x=>x.id===s.memberId), p=policies.find(x=>x.id===s.policyId), b=banks.find(x=>x.id===s.bankId);
+                if(!m||!p||!b) return '';
+                return `<tr><td><strong>${m.name}</strong></td><td>${p.name}</td><td>${p.company}</td><td>${p.policyNumber}</td><td>${b.name}</td><td><span class="payment-badge ${s.paymentMethod.toLowerCase()}">${s.paymentMethod}</span></td><td>${formatDate(s.firstPremiumDate)}</td><td><span class="badge ${getFreqBadge(p.frequency)}">${getFreqLabel(p.frequency)}</span></td><td style="text-align:right;font-weight:600;color:var(--success)">₹${p.amount.toLocaleString('en-IN')}</td><td><button class="btn btn-danger btn-sm btn-icon" onclick="deleteSetup(${s.id})"><i class="ri-delete-bin-line"></i></button></td></tr>`;
+            }).join('');
+        }
+
+        // DEPOSIT/CREDIT
+        function populateDepositDropdown() {
+            document.getElementById('depositBank').innerHTML = '<option value="">Select Bank</option>'+banks.map(b=>`<option value="${b.id}">${b.name} ${b.accountNumber?'('+b.accountNumber+')':''}</option>`).join('');
+            document.getElementById('depositDate').value = new Date().toISOString().split('T')[0];
+        }
+        function handleDepositSubmit(e) {
+            e.preventDefault();
+            const bankId = parseInt(document.getElementById('depositBank').value);
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const date = document.getElementById('depositDate').value;
+            const reference = document.getElementById('depositReference').value.trim() || '-';
+            const description = document.getElementById('depositDescription').value.trim() || 'Deposit';
+            transactions.push({id:idCounters.txn++, bankId, type:'credit', amount, date, reference, description});
+            saveData(); closeModal('depositModal'); renderAll();
+            alert('₹'+amount.toLocaleString('en-IN')+' added successfully!');
+        }
+
+        // CALCULATE BANK BALANCE
+        function calculateBankBalance(bankId, upToDate = null) {
+            let balance = 0;
+            const bankTxns = transactions.filter(t => t.bankId === bankId);
+            bankTxns.sort((a,b) => new Date(a.date) - new Date(b.date));
+            for(const t of bankTxns) {
+                if(upToDate && new Date(t.date) > new Date(upToDate)) break;
+                if(t.type === 'credit') balance += t.amount;
+                else balance -= t.amount;
+            }
+            return balance;
+        }
+
+        // GENERATE OCCURRENCES
+        function generateOccurrences(setup, year) {
+            const m=members.find(x=>x.id===setup.memberId), p=policies.find(x=>x.id===setup.policyId), b=banks.find(x=>x.id===setup.bankId);
+            if(!m||!p||!b) return [];
+            const occ=[], first=new Date(setup.firstPremiumDate);
+            let inc={'monthly':1,'quarterly-3':3,'quarterly-4':4,'yearly':12}[p.frequency]||1;
+            let cur=new Date(first);
+            if(cur.getFullYear()>year) return [];
+            while(cur.getFullYear()<year) cur.setMonth(cur.getMonth()+inc);
+            if(cur.getFullYear()>year) { cur.setMonth(cur.getMonth()-inc); if(cur.getFullYear()<year){ cur=new Date(first); while(cur.getFullYear()<year) cur.setMonth(cur.getMonth()+inc); if(cur.getFullYear()>year) return []; }}
+            while(cur.getFullYear()===year) { occ.push({date:new Date(cur),member:m,policy:p,bank:b,bankId:setup.bankId,paymentMethod:setup.paymentMethod,amount:p.amount}); cur.setMonth(cur.getMonth()+inc); }
+            return occ;
+        }
+
+        // FILTERS
+        function populateFilters() {
+            const companies = [...new Set(policies.map(p=>p.company))];
+            ['dashFilterMember','filterMember'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = '<option value="all">All</option>'+members.map(m=>`<option value="${m.id}">${m.name}</option>`).join(''); });
+            ['dashFilterCompany','filterCompany'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = '<option value="all">All</option>'+companies.map(c=>`<option value="${c}">${c}</option>`).join(''); });
+            ['dashFilterBank','filterBank','txnFilterBank'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = '<option value="all">All</option>'+banks.map(b=>`<option value="${b.id}">${b.name}</option>`).join(''); });
+            const fm=document.getElementById('filterMonth');
+            if(fm && fm.options.length<=1) fm.innerHTML = '<option value="all">All</option>'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+        }
+        function resetFilters() { ['dashFilterMember','dashFilterCompany','dashFilterBank'].forEach(id => { const el=document.getElementById(id); if(el) el.value='all'; }); renderDashboard(); }
+
+        // DASHBOARD
+        function changeYear(d) { currentYear+=d; document.getElementById('currentYear').textContent=currentYear; renderDashboard(); renderDetailedTracking(); renderBankBalance(); renderTransactions(); }
+        function renderDashboard() {
+            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const fMember=document.getElementById('dashFilterMember')?.value||'all', fCompany=document.getElementById('dashFilterCompany')?.value||'all', fBank=document.getElementById('dashFilterBank')?.value||'all';
+            let all=[];
+            premiumSetups.forEach(s => {
+                if(fMember!=='all' && s.memberId!==parseInt(fMember)) return;
+                if(fBank!=='all' && s.bankId!==parseInt(fBank)) return;
+                const p=policies.find(x=>x.id===s.policyId);
+                if(fCompany!=='all' && p?.company!==fCompany) return;
+                all = all.concat(generateOccurrences(s, currentYear));
+            });
+            let yearTotal=all.reduce((s,o)=>s+o.amount,0);
+            const curMonth=new Date().getMonth();
+            const thisMonth=all.filter(o=>o.date.getMonth()===curMonth).reduce((s,o)=>s+o.amount,0);
+            document.getElementById('totalPolicies').textContent=premiumSetups.length;
+            document.getElementById('yearlyTotal').textContent='₹'+yearTotal.toLocaleString('en-IN');
+            document.getElementById('thisMonthDue').textContent='₹'+thisMonth.toLocaleString('en-IN');
+            document.getElementById('totalMembers').textContent=members.length;
+
+            // Summaries
+            const byCompany={}, byBank={}, byMember={};
+            all.forEach(o => { byCompany[o.policy.company]=(byCompany[o.policy.company]||0)+o.amount; byBank[o.bank.name]={total:(byBank[o.bank.name]?.total||0)+o.amount,id:o.bankId}; byMember[o.member.name]={total:(byMember[o.member.name]?.total||0)+o.amount,id:o.member.id}; });
+            document.getElementById('companySummary').innerHTML = Object.keys(byCompany).length ? Object.entries(byCompany).map(([k,v])=>`<div class="summary-card" onclick="document.getElementById('dashFilterCompany').value='${k}';renderDashboard();"><div class="summary-card-icon company"><i class="ri-building-line"></i></div><div class="summary-card-name">${k}</div><div class="summary-card-value">₹${v.toLocaleString('en-IN')}</div></div>`).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;">No data</div>';
+            document.getElementById('bankSummary').innerHTML = Object.keys(byBank).length ? Object.entries(byBank).map(([k,v])=>`<div class="summary-card" onclick="document.getElementById('dashFilterBank').value='${v.id}';renderDashboard();"><div class="summary-card-icon bank"><i class="ri-bank-line"></i></div><div class="summary-card-name">${k}</div><div class="summary-card-value">₹${v.total.toLocaleString('en-IN')}</div></div>`).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;">No data</div>';
+            document.getElementById('memberSummary').innerHTML = Object.keys(byMember).length ? Object.entries(byMember).map(([k,v])=>`<div class="summary-card" onclick="document.getElementById('dashFilterMember').value='${v.id}';renderDashboard();"><div class="summary-card-icon member"><i class="ri-user-line"></i></div><div class="summary-card-name">${k}</div><div class="summary-card-value">₹${v.total.toLocaleString('en-IN')}</div></div>`).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;">No data</div>';
+
+            // Monthly
+            const monthly={}; for(let i=0;i<12;i++) monthly[i]=[];
+            all.forEach(o => monthly[o.date.getMonth()].push(o));
+            document.getElementById('monthsGrid').innerHTML = months.map((mn,mi) => {
+                const prems=monthly[mi].sort((a,b)=>a.date.getDate()-b.date.getDate());
+                const total=prems.reduce((s,p)=>s+p.amount,0);
+                return `<div class="month-card"><div class="month-card-header"><div class="month-name">${mn}</div><div class="month-total">₹${total.toLocaleString('en-IN')}</div></div><div class="month-card-body">${prems.length ? prems.map(p=>`<div class="premium-item"><div class="premium-top"><div class="premium-avatar ${p.member.color}">${p.member.name.substring(0,2)}</div><div class="premium-main"><div class="premium-member-name">${p.member.name}</div><div class="premium-company-name">${p.policy.company} • ${p.policy.policyNumber}</div></div><div class="premium-amount-box"><div class="premium-amount">₹${p.amount.toLocaleString('en-IN')}</div><div class="premium-date">${p.date.getDate()} ${mn.substring(0,3)}</div></div></div><div class="premium-bank-row"><i class="ri-bank-line bank-icon"></i><span class="bank-name">${p.bank.name}</span><span class="bank-account">${p.bank.accountNumber?'•••'+p.bank.accountNumber.slice(-4):''}</span><span class="payment-badge ${p.paymentMethod.toLowerCase()}">${p.paymentMethod}</span></div></div>`).join('') : '<div class="no-premiums">No premiums</div>'}</div></div>`;
+            }).join('');
+        }
+
+        // TRACKING
+        function renderDetailedTracking() {
+            const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const fMonth=document.getElementById('filterMonth')?.value||'all', fMember=document.getElementById('filterMember')?.value||'all', fCompany=document.getElementById('filterCompany')?.value||'all', fBank=document.getElementById('filterBank')?.value||'all';
+            let all=[];
+            premiumSetups.forEach(s => {
+                if(fMember!=='all' && s.memberId!==parseInt(fMember)) return;
+                if(fBank!=='all' && s.bankId!==parseInt(fBank)) return;
+                const p=policies.find(x=>x.id===s.policyId);
+                if(fCompany!=='all' && p?.company!==fCompany) return;
+                all = all.concat(generateOccurrences(s, currentYear));
+            });
+            if(fMonth!=='all') all=all.filter(o=>o.date.getMonth()===parseInt(fMonth));
+            all.sort((a,b)=>a.date.getMonth()!==b.date.getMonth()?a.date.getMonth()-b.date.getMonth():a.date.getDate()-b.date.getDate());
+            const c=document.getElementById('detailedTrackingBody');
+            if(!all.length) { c.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No data</td></tr>`; return; }
+            let html='',curM=-1,mTotal=0;
+            all.forEach(o => {
+                const om=o.date.getMonth();
+                if(om!==curM) { if(curM!==-1) html+=`<tr style="background:var(--bg-dark);"><td colspan="7" style="text-align:right;font-weight:700;">TOTAL</td><td style="text-align:right;font-weight:700;color:var(--success);">₹${mTotal.toLocaleString('en-IN')}</td></tr>`; html+=`<tr style="background:var(--primary-bg);"><td colspan="8" style="font-weight:700;color:var(--primary-light);"><i class="ri-calendar-line"></i> ${months[om]} ${currentYear}</td></tr>`; curM=om; mTotal=0; }
+                mTotal+=o.amount;
+                html+=`<tr><td><strong>${o.member.name}</strong></td><td style="color:var(--purple);font-weight:600;">${o.policy.company}</td><td>${o.policy.policyNumber}</td><td>${o.date.getDate()}-${months[om].substring(0,3)}</td><td>${o.bank.accountNumber||'-'}</td><td style="color:var(--info);font-weight:600;">${o.bank.name}</td><td><span class="payment-badge ${o.paymentMethod.toLowerCase()}">${o.paymentMethod}</span></td><td style="text-align:right;font-weight:600;color:var(--success);">₹${o.amount.toLocaleString('en-IN')}</td></tr>`;
+            });
+            if(curM!==-1) html+=`<tr style="background:var(--bg-dark);"><td colspan="7" style="text-align:right;font-weight:700;">TOTAL</td><td style="text-align:right;font-weight:700;color:var(--success);">₹${mTotal.toLocaleString('en-IN')}</td></tr>`;
+            html+=`<tr style="background:var(--success-bg);"><td colspan="7" style="text-align:right;font-weight:700;">GRAND TOTAL</td><td style="text-align:right;font-weight:800;color:var(--success);">₹${all.reduce((s,o)=>s+o.amount,0).toLocaleString('en-IN')}</td></tr>`;
+            c.innerHTML=html;
+        }
+
+        // BANK BALANCE
+        function renderBankBalance() {
+            const c=document.getElementById('bankBalanceContainer');
+            const ys=document.getElementById('balanceYear');
+            if(!ys.options.length) { for(let y=2020;y<=new Date().getFullYear()+5;y++) { const o=document.createElement('option'); o.value=y; o.textContent=y; if(y===currentYear) o.selected=true; ys.appendChild(o); }}
+            const yr=parseInt(ys.value)||currentYear;
+            if(!banks.length) { c.innerHTML=`<div class="empty-state"><i class="ri-wallet-3-line"></i><h3>No Banks</h3></div>`; return; }
+
+            // Get all premium occurrences for year
+            let allPremiums=[];
+            premiumSetups.forEach(s => { allPremiums=allPremiums.concat(generateOccurrences(s,yr)); });
+
+            let html=banks.map(b => {
+                const bankTxns=transactions.filter(t=>t.bankId===b.id);
+                const credits=bankTxns.filter(t=>t.type==='credit').reduce((s,t)=>s+t.amount,0);
+                const premiumDebits=allPremiums.filter(p=>p.bankId===b.id).reduce((s,p)=>s+p.amount,0);
+                const closing=credits-premiumDebits;
+                return `<div class="balance-card" onclick="showBankHistory(${b.id},'${b.name}')"><div class="balance-header"><div class="balance-bank-name"><i class="ri-bank-line" style="color:var(--info);"></i>${b.name} ${b.accountNumber?'<span style="color:var(--text-muted);font-size:0.75rem;">('+b.accountNumber+')</span>':''}</div><span class="payment-badge ${b.paymentMethod.toLowerCase()}">${b.paymentMethod}</span></div><div class="balance-grid"><div class="balance-item"><div class="balance-item-label">Opening</div><div class="balance-item-value opening">₹${(b.openingBalance||0).toLocaleString('en-IN')}</div></div><div class="balance-item"><div class="balance-item-label">Total Credit</div><div class="balance-item-value credit">+₹${credits.toLocaleString('en-IN')}</div></div><div class="balance-item"><div class="balance-item-label">Total Debit</div><div class="balance-item-value debit">-₹${premiumDebits.toLocaleString('en-IN')}</div></div><div class="balance-item"><div class="balance-item-label">Closing</div><div class="balance-item-value closing" style="color:${closing>=0?'var(--success)':'var(--danger)'}">₹${closing.toLocaleString('en-IN')}</div></div></div></div>`;
+            }).join('');
+
+            // Total
+            const totalCredits=transactions.filter(t=>t.type==='credit').reduce((s,t)=>s+t.amount,0);
+            const totalDebits=allPremiums.reduce((s,p)=>s+p.amount,0);
+            const totalClosing=totalCredits-totalDebits;
+            html+=`<div class="balance-card" style="background:linear-gradient(135deg,var(--primary-bg),var(--bg-card));border-color:var(--primary);"><div class="balance-header"><div class="balance-bank-name"><i class="ri-funds-line" style="color:var(--primary);"></i>TOTAL ALL BANKS</div></div><div class="balance-grid"><div class="balance-item"><div class="balance-item-label">Opening</div><div class="balance-item-value opening">₹${banks.reduce((s,b)=>s+(b.openingBalance||0),0).toLocaleString('en-IN')}</div></div><div class="balance-item"><div class="balance-item-label">Total Credit</div><div class="balance-item-value credit">+₹${totalCredits.toLocaleString('en-IN')}</div></div><div class="balance-item"><div class="balance-item-label">Total Debit</div><div class="balance-item-value debit">-₹${totalDebits.toLocaleString('en-IN')}</div></div><div class="balance-item"><div class="balance-item-label">Closing</div><div class="balance-item-value" style="color:${totalClosing>=0?'var(--success)':'var(--danger)'}">₹${totalClosing.toLocaleString('en-IN')}</div></div></div></div>`;
+            c.innerHTML=html;
+        }
+
+        // SHOW BANK HISTORY
+        function showBankHistory(bankId, bankName) {
+            document.getElementById('bankHistoryTitle').innerHTML = `<i class="ri-bank-line" style="color:var(--info);"></i> ${bankName} - Statement`;
+            const bank=banks.find(b=>b.id===bankId);
+            const yr=parseInt(document.getElementById('balanceYear')?.value)||currentYear;
+            
+            // Get transactions + premium debits
+            let allTxns = [];
+            
+            // Add credit transactions
+            transactions.filter(t=>t.bankId===bankId).forEach(t => {
+                allTxns.push({date:t.date, type:t.type, description:t.description, reference:t.reference, amount:t.amount});
+            });
+            
+            // Add premium debits
+            premiumSetups.forEach(s => {
+                if(s.bankId !== bankId) return;
+                generateOccurrences(s, yr).forEach(o => {
+                    allTxns.push({date:o.date.toISOString().split('T')[0], type:'debit', description:`Premium: ${o.member.name} - ${o.policy.company}`, reference:o.policy.policyNumber, amount:o.amount});
+                });
+            });
+            
+            // Sort by date
+            allTxns.sort((a,b) => new Date(a.date) - new Date(b.date));
+            
+            // Calculate running balance
+            let balance = 0;
+            let totalCredit = 0, totalDebit = 0;
+            
+            const c = document.getElementById('bankHistoryBody');
+            if(!allTxns.length) { c.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">No transactions</td></tr>`; }
+            else {
+                c.innerHTML = allTxns.map(t => {
+                    if(t.type==='credit') { balance+=t.amount; totalCredit+=t.amount; }
+                    else { balance-=t.amount; totalDebit+=t.amount; }
+                    return `<tr class="txn-${t.type}"><td>${formatDate(t.date)}</td><td><span class="txn-type ${t.type}"><i class="ri-${t.type==='credit'?'add':'subtract'}-line"></i>${t.type}</span></td><td>${t.description}</td><td>${t.reference||'-'}</td><td style="text-align:right;" class="txn-amount ${t.type==='debit'?'debit':''}">${t.type==='debit'?'₹'+t.amount.toLocaleString('en-IN'):'-'}</td><td style="text-align:right;" class="txn-amount ${t.type==='credit'?'credit':''}">${t.type==='credit'?'₹'+t.amount.toLocaleString('en-IN'):'-'}</td><td style="text-align:right;font-weight:700;color:${balance>=0?'var(--success)':'var(--danger)'}">₹${balance.toLocaleString('en-IN')}</td></tr>`;
+                }).join('');
+            }
+            
+            document.getElementById('bankHistoryStats').innerHTML = `<div class="balance-grid"><div class="balance-item"><div class="balance-item-label">Total Credit</div><div class="balance-item-value credit">+₹${totalCredit.toLocaleString('en-IN')}</div></div><div class="balance-item"><div class="balance-item-label">Total Debit</div><div class="balance-item-value debit">-₹${totalDebit.toLocaleString('en-IN')}</div></div><div class="balance-item"><div class="balance-item-label">Current Balance</div><div class="balance-item-value" style="color:${balance>=0?'var(--success)':'var(--danger)'}">₹${balance.toLocaleString('en-IN')}</div></div></div>`;
+            
+            openModal('bankHistoryModal');
+        }
+
+        // TRANSACTIONS PAGE
+        function renderTransactions() {
+            const fBank=document.getElementById('txnFilterBank')?.value||'all';
+            const fType=document.getElementById('txnFilterType')?.value||'all';
+            const ys=document.getElementById('txnFilterYear');
+            if(!ys.options.length) { for(let y=2020;y<=new Date().getFullYear()+5;y++) { const o=document.createElement('option'); o.value=y; o.textContent=y; if(y===currentYear) o.selected=true; ys.appendChild(o); }}
+            const yr=parseInt(ys.value)||currentYear;
+
+            let allTxns=[];
+            
+            // Credits
+            if(fType==='all'||fType==='credit') {
+                transactions.forEach(t => {
+                    if(fBank!=='all' && t.bankId!==parseInt(fBank)) return;
+                    if(new Date(t.date).getFullYear()!==yr) return;
+                    const bank=banks.find(b=>b.id===t.bankId);
+                    allTxns.push({...t, bankName:bank?.name||'Unknown'});
+                });
+            }
+            
+            // Debits (premiums)
+            if(fType==='all'||fType==='debit') {
+                premiumSetups.forEach(s => {
+                    if(fBank!=='all' && s.bankId!==parseInt(fBank)) return;
+                    const bank=banks.find(b=>b.id===s.bankId);
+                    generateOccurrences(s, yr).forEach(o => {
+                        allTxns.push({date:o.date.toISOString().split('T')[0], type:'debit', description:`${o.member.name} - ${o.policy.company}`, reference:o.policy.policyNumber, amount:o.amount, bankId:s.bankId, bankName:bank?.name||'Unknown'});
+                    });
+                });
+            }
+            
+            allTxns.sort((a,b)=>new Date(b.date)-new Date(a.date)); // Latest first
+            
+            const c=document.getElementById('transactionsBody');
+            if(!allTxns.length) { c.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">No transactions</td></tr>`; return; }
+            
+            // Calculate running balance per bank
+            const bankBalances={};
+            banks.forEach(b => bankBalances[b.id]=0);
+            const sortedForBalance=[...allTxns].sort((a,b)=>new Date(a.date)-new Date(b.date));
+            sortedForBalance.forEach(t => { if(t.type==='credit') bankBalances[t.bankId]+=t.amount; else bankBalances[t.bankId]-=t.amount; });
+            
+            c.innerHTML = allTxns.map(t => {
+                return `<tr class="txn-${t.type}"><td>${formatDate(t.date)}</td><td style="color:var(--info);font-weight:600;">${t.bankName}</td><td><span class="txn-type ${t.type}"><i class="ri-${t.type==='credit'?'add':'subtract'}-line"></i>${t.type}</span></td><td>${t.description}</td><td>${t.reference||'-'}</td><td style="text-align:right;" class="txn-amount ${t.type}">${t.type==='credit'?'+':'−'}₹${t.amount.toLocaleString('en-IN')}</td><td style="text-align:right;font-weight:600;">-</td></tr>`;
+            }).join('');
+        }
+
+        // UTILS
+        function formatDate(d) { const dt=new Date(d); return `${dt.getDate()}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dt.getMonth()]}-${dt.getFullYear()}`; }
+        function printReport() { window.print(); }
+
+        // RENDER ALL
+        function renderAll() { populateFilters(); renderMembers(); renderBanks(); renderPolicies(); renderPremiumSetups(); renderDashboard(); renderDetailedTracking(); renderBankBalance(); renderTransactions(); }
+
+        // INIT
+        document.addEventListener('DOMContentLoaded', () => { document.getElementById('currentYear').textContent=currentYear; renderAll(); });
+    </script>
+</body>
+</html>
