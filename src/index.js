@@ -41,4 +41,11 @@ async function startServer() {
   }
 }
 
-startServer(); 
+if (require.main === module) {
+  startServer();
+} else {
+  // For Serverless/Vercel
+  connectDB().catch(err => console.error('MongoDB connection error:', err));
+}
+
+module.exports = app; 
