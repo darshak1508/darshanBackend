@@ -13,15 +13,26 @@ if (!process.env.MONGO_URI) {
 }
 
 // MongoDB connection
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected) {
+    console.log('Using existing MongoDB connection');
+    return;
+  }
+
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
+    const db = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
+
+    isConnected = db.connections[0].readyState;
     console.log('MongoDB connected successfully.');
   } catch (error) {
     console.error('MongoDB connection error:', error);
+    // Do not throw immediately in serverless if you want to retry, 
+    // but throwing here is fine as long as the handler catches it.
     throw error;
   }
 };
