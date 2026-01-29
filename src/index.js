@@ -11,8 +11,18 @@ const vehicleRoutes = require('./routes/vehicleRoutes');
 
 const app = express();
 
+// CORS Configuration
+const corsOrigin = process.env.CORS_ORIGIN || '*';
+
+const corsOptions = {
+  origin: corsOrigin === '*' ? '*' : corsOrigin.split(',').map(origin => origin.trim()),
+  credentials: corsOrigin !== '*', // credentials can't be used with wildcard origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Routes
