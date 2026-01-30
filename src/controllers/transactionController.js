@@ -57,7 +57,15 @@ const transactionController = {
         OpenTon: openTon,
         OpenPrice: openPrice,
         TotalPrice: totalPrice,
-        TransactionDate: TransactionDate ? new Date(TransactionDate) : new Date()
+        TransactionDate: (() => {
+          const date = new Date();
+          if (TransactionDate) {
+            const provided = new Date(TransactionDate);
+            date.setFullYear(provided.getFullYear(), provided.getMonth(), provided.getDate());
+            return date;
+          }
+          return date;
+        })()
       });
 
       await transaction.save();
@@ -547,7 +555,15 @@ const transactionController = {
           OpenTon: openTon,
           OpenPrice: openPrice,
           TotalPrice: totalPrice,
-          TransactionDate: TransactionDate ? new Date(TransactionDate) : transaction.TransactionDate
+          TransactionDate: (() => {
+            if (TransactionDate) {
+              const date = new Date();
+              const provided = new Date(TransactionDate);
+              date.setFullYear(provided.getFullYear(), provided.getMonth(), provided.getDate());
+              return date;
+            }
+            return transaction.TransactionDate;
+          })()
         },
         { new: true }
       ).populate('FirmID', 'FirmName').populate('VehicleID', 'VehicleNo');
