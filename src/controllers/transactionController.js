@@ -142,9 +142,6 @@ const transactionController = {
 
       const addPageHeader = () => {
         doc.font('Helvetica-Bold').fontSize(14)
-          .text('SureshBhai Sadra', { align: 'center' })
-          .moveDown(0.3);
-        doc.font('Helvetica-Bold').fontSize(11)
           .text(firmName, { align: 'center' })
           .moveDown(0.3);
         doc.font('Helvetica').fontSize(10)
@@ -169,9 +166,9 @@ const transactionController = {
       };
 
       const tableLayout = {
-        headers: ['Sr.', 'Firm', 'Vehicle', 'RO No', 'Total Ton', 'RO Ton', 'RO Price', 'Open Ton', 'Open Price', 'Total Price'],
+        headers: ['Sr.', 'Vehicle', 'RO No', 'Total Ton', 'RO Ton', 'RO Price', 'Over Ton', 'Over Price', 'Total Price'],
         rows: [],
-        columnWidths: [20, 90, 55, 45, 45, 45, 60, 45, 60, 55],
+        columnWidths: [30, 70, 60, 60, 60, 70, 60, 70, 70],
         headerColor: '#eeeeee',
         headerOpacity: 1,
         headerFont: 'Helvetica-Bold',
@@ -242,7 +239,6 @@ const transactionController = {
         dayTrans.forEach((t, i) => {
           table.rows.push([
             (i + 1).toString(),
-            t.FirmID?.FirmName || 'N/A',
             t.VehicleID?.VehicleNo || 'N/A',
             t.RoNumber || '',
             Number(t.TotalTon).toFixed(2),
@@ -257,7 +253,6 @@ const transactionController = {
         const dailyTotals = calculateDailyTotals(dayTrans);
         table.rows.push([
           'Total',
-          '',
           '',
           '',
           dailyTotals.TotalTon.toFixed(2),
@@ -284,7 +279,7 @@ const transactionController = {
 
       const grandTable = {
         ...tableLayout,
-        headers: ['Total Ton', 'RO Ton', 'RO Price', 'Open Ton', 'Open Price', 'Total Price'],
+        headers: ['Total Ton', 'RO Ton', 'RO Price', 'Over Ton', 'Over Price', 'Total Price'],
         columnWidths: [86, 86, 86, 86, 86, 90],
         rows: [[
           grandTotals.TotalTon.toFixed(2),
@@ -437,14 +432,13 @@ const transactionController = {
       const workbook = XLSX.utils.book_new();
       const data = transactions.map(t => ({
         Date: new Date(t.TransactionDate).toLocaleDateString(),
-        Firm: t.FirmID?.FirmName || 'N/A',
         Vehicle: t.VehicleID?.VehicleNo || 'N/A',
         'RO Number': t.RoNumber,
         'Total Ton': Number(t.TotalTon),
         'RO Ton': Number(t.RoTon),
         'RO Price': Number(t.RoPrice),
-        'Open Ton': Number(t.OpenTon),
-        'Open Price': Number(t.OpenPrice),
+        'Over Ton': Number(t.OpenTon),
+        'Over Price': Number(t.OpenPrice),
         'Total Price': Number(t.TotalPrice)
       }));
 
