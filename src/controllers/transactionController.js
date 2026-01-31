@@ -80,8 +80,8 @@ const transactionController = {
     try {
       const transactions = await Transaction.find({ FirmID: req.params.firmId })
         .sort({ TransactionDate: -1 })
-        .populate('FirmID', 'FirmName')
-        .populate('VehicleID', 'VehicleNo');
+        .populate('Firm', 'FirmName')
+        .populate('Vehicle', 'VehicleNo');
 
       if (!transactions.length) return res.status(404).json({ message: "No transactions found for this firm." });
       res.json(transactions);
@@ -103,8 +103,8 @@ const transactionController = {
       if (firmId) query.FirmID = firmId;
 
       const transactions = await Transaction.find(query)
-        .populate('FirmID', 'FirmName')
-        .populate('VehicleID', 'VehicleNo')
+        .populate('Firm', 'FirmName')
+        .populate('Vehicle', 'VehicleNo')
         .sort({ TransactionDate: -1 });
 
       if (!transactions.length) {
@@ -247,7 +247,7 @@ const transactionController = {
         dayTrans.forEach((t, i) => {
           table.rows.push([
             (i + 1).toString(),
-            t.VehicleID?.VehicleNo || 'N/A',
+            t.Vehicle?.VehicleNo || 'N/A',
             t.RoNumber || '',
             Number(t.TotalTon).toFixed(2),
             Number(t.RoTon).toFixed(2),
@@ -315,8 +315,8 @@ const transactionController = {
   getTransaction: async (req, res) => {
     try {
       const transaction = await Transaction.findOne({ TransactionID: req.params.id })
-        .populate('FirmID', 'FirmName')
-        .populate('VehicleID', 'VehicleNo');
+        .populate('Firm', 'FirmName')
+        .populate('Vehicle', 'VehicleNo');
 
       if (!transaction) {
         return res.status(404).json({ message: "Transaction not found." });
@@ -405,8 +405,8 @@ const transactionController = {
   getAllTransactions: async (req, res) => {
     try {
       const transactions = await Transaction.find()
-        .populate('FirmID', 'FirmName')
-        .populate('VehicleID', 'VehicleNo')
+        .populate('Firm', 'FirmName')
+        .populate('Vehicle', 'VehicleNo')
         .sort({ TransactionDate: -1 });
 
       res.json(transactions);
@@ -429,8 +429,8 @@ const transactionController = {
       if (firmId) query.FirmID = firmId;
 
       const transactions = await Transaction.find(query)
-        .populate('FirmID', 'FirmName')
-        .populate('VehicleID', 'VehicleNo')
+        .populate('Firm', 'FirmName')
+        .populate('Vehicle', 'VehicleNo')
         .sort({ TransactionDate: -1 });
 
       if (!transactions.length) {
@@ -440,7 +440,7 @@ const transactionController = {
       const workbook = XLSX.utils.book_new();
       const data = transactions.map(t => ({
         Date: new Date(t.TransactionDate).toLocaleDateString(),
-        Vehicle: t.VehicleID?.VehicleNo || 'N/A',
+        Vehicle: t.Vehicle?.VehicleNo || 'N/A',
         'RO Number': t.RoNumber,
         'Total Ton': Number(t.TotalTon),
         'RO Ton': Number(t.RoTon),
@@ -560,7 +560,7 @@ const transactionController = {
           })()
         },
         { new: true }
-      ).populate('FirmID', 'FirmName').populate('VehicleID', 'VehicleNo');
+      ).populate('Firm', 'FirmName').populate('Vehicle', 'VehicleNo');
 
       res.json(updatedTransaction);
     } catch (error) {

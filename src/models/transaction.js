@@ -55,8 +55,24 @@ const transactionSchema = new mongoose.Schema({
   collection: 'Transactions',
   timestamps: false,
   versionKey: false,
-  toJSON: { getters: true },
-  toObject: { getters: true }
+  toJSON: { getters: true, virtuals: true },
+  toObject: { getters: true, virtuals: true }
+});
+
+// Virtual populate for Vehicle
+transactionSchema.virtual('Vehicle', {
+  ref: 'Vehicle',
+  localField: 'VehicleID',
+  foreignField: 'VehicleID',
+  justOne: true
+});
+
+// Virtual populate for Firm
+transactionSchema.virtual('Firm', {
+  ref: 'Firm',
+  localField: 'FirmID',
+  foreignField: 'FirmID',
+  justOne: true
 });
 
 // Auto-increment TransactionID
