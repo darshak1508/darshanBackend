@@ -8,6 +8,7 @@ const firmRoutes = require('./routes/firmRoutes');
 const pricingRoutes = require('./routes/pricingRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const vehicleRoutes = require('./routes/vehicleRoutes');
+const noteRoutes = require('./routes/noteRoutes');
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/api/firm', authMiddleware, firmRoutes);
 app.use('/api/pricing', authMiddleware, pricingRoutes);
 app.use('/api/transaction', authMiddleware, transactionRoutes);
 app.use('/api/vehicle', authMiddleware, vehicleRoutes);
+app.use('/api/note', authMiddleware, noteRoutes);
 
 const PORT = process.env.PORT || 3000;
 

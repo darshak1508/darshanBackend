@@ -6,6 +6,7 @@ const Pricing = require('./pricing');
 const Transaction = require('./transaction');
 const Vehicle = require('./vehicle');
 const User = require('./user');
+const Note = require('./note');
 
 // Check for required environment variable
 if (!process.env.MONGO_URI) {
@@ -44,5 +45,6 @@ module.exports = {
   Pricing,
   Transaction,
   Vehicle,
-  User
+  User,
+  Note
 };
