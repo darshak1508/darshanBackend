@@ -7,6 +7,14 @@ const formatDate = (date) => {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(2)}`;
 };
 
+const buildDateRangeQuery = (startDate, endDate) => {
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
+  return { $gte: start, $lte: end };
+};
+
 const calculateDailyTotals = (transactions) => {
   return transactions.reduce((totals, t) => ({
     TotalTon: totals.TotalTon + Number(t.TotalTon),
@@ -94,11 +102,13 @@ const transactionController = {
   downloadTransactionsPdf: async (req, res) => {
     try {
       const { startDate, endDate, firmId, roTonPrice, openTonPrice } = req.query;
+
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Start date and end date are required." });
+      }
+
       const query = {
-        TransactionDate: {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate)
-        }
+        TransactionDate: buildDateRangeQuery(startDate, endDate)
       };
       if (firmId) query.FirmID = firmId;
 
@@ -137,7 +147,7 @@ const transactionController = {
       const doc = new PDFDocument({
         size: 'A4',
         layout: 'portrait',
-        margin: { top: 40, bottom: 40, left: 40, right: 40 },
+        margin: { top: 50, bottom: 50, left: 40, right: 40 },
         bufferPages: true
       });
       const chunks = [];
@@ -148,36 +158,58 @@ const transactionController = {
         res.send(Buffer.concat(chunks));
       });
 
+      const tableWidth = 515;
+      const leftMargin = 40;
+
       const addPageHeader = () => {
-        doc.font('Helvetica-Bold').fontSize(14)
+        doc.moveDown(0.5);
+        doc.font('Helvetica-Bold').fontSize(18).fillColor('#1e3a5f')
+          .text('Transaction Report', { align: 'center' })
+          .moveDown(0.2);
+        doc.font('Helvetica').fontSize(11).fillColor('#4b5563')
           .text(firmName, { align: 'center' })
+          .moveDown(0.1);
+        doc.font('Helvetica').fontSize(10).fillColor('#6b7280')
+          .text(`Period: ${formatDate(new Date(startDate))} — ${formatDate(new Date(endDate))}`, { align: 'center' })
           .moveDown(0.3);
-        doc.font('Helvetica').fontSize(10)
-          .text(`Transaction Report: ${formatDate(new Date(startDate))} - ${formatDate(new Date(endDate))}`,
-            { align: 'center' })
-          .moveDown(0.5);
+        doc.moveTo(leftMargin, doc.y).lineTo(leftMargin + tableWidth, doc.y)
+          .strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+        doc.moveDown(0.6).fillColor('#000000');
       };
 
       addPageHeader();
 
+      if (useCustomPrices) {
+        doc.font('Helvetica-Oblique').fontSize(9).fillColor('#6b7280')
+          .text(`* Recalculated with custom rates: RO Ton = Rs. ${prices.roTonPrice}, Open Ton = Rs. ${prices.openTonPrice}`, { align: 'center' })
+          .fillColor('#000000').moveDown(0.4);
+      }
+
       const tableSettings = {
-        prepareHeader: () => doc.font('Helvetica-Bold').fontSize(8),
-        prepareRow: () => doc.font('Helvetica').fontSize(8),
-        width: 520,
-        padding: [5, 3, 5, 3],
-        divider: {
-          header: { disabled: false, width: 1, opacity: 1 },
-          horizontal: { disabled: false, width: 0.5, opacity: 0.5 }
+        prepareHeader: () => doc.font('Helvetica-Bold').fontSize(8).fillColor('#1f2937'),
+        prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
+          const isTotalRow = row && row.some && row.some(c => c === 'Total');
+          doc.font(isTotalRow ? 'Helvetica-Bold' : 'Helvetica').fontSize(8).fillColor('#000000');
+          if (doc.addBackground && indexColumn === 0 && !isTotalRow && indexRow % 2 === 1) {
+            doc.addBackground(rectRow, '#f9fafb', 1);
+          }
         },
-        x: 40,
-        columnSpacing: 2
+        width: tableWidth,
+        padding: [6, 8, 6, 8],
+        columnSpacing: 4,
+        minRowHeight: 22,
+        divider: {
+          header: { disabled: false, width: 1, opacity: 0.2 },
+          horizontal: { disabled: false, width: 0.3, opacity: 0.4 }
+        },
+        x: leftMargin
       };
 
       const tableLayout = {
         headers: ['Sr.', 'Vehicle', 'RO No', 'Total Ton', 'RO Ton', 'RO Price', 'Over Ton', 'Over Price', 'Total Price'],
         rows: [],
-        columnWidths: [30, 70, 60, 60, 60, 70, 60, 70, 70],
-        headerColor: '#eeeeee',
+        columnWidths: [28, 58, 88, 54, 50, 64, 50, 64, 64],
+        headerColor: '#e5e7eb',
         headerOpacity: 1,
         headerFont: 'Helvetica-Bold',
         rowFont: 'Helvetica',
@@ -185,15 +217,15 @@ const transactionController = {
       };
 
       const checkAndAddNewPage = () => {
-        const pageHeight = 800;
+        const pageHeight = 752;
         const currentHeight = doc.y;
         const remainingHeight = pageHeight - currentHeight;
-        const estimatedTableHeight = (tableLayout.rows.length + 2) * 20;
+        const estimatedTableHeight = (tableLayout.rows.length + 2) * 24;
 
         if (remainingHeight < estimatedTableHeight || doc.y > 680) {
-          doc.addPage();
+          doc.addPage({ layout: 'portrait', size: 'A4', margin: { top: 50, bottom: 50, left: 40, right: 40 } });
           addPageHeader();
-          doc.y = 140;
+          doc.y = 95;
         }
       };
 
@@ -237,9 +269,9 @@ const transactionController = {
         checkAndAddNewPage();
 
         const dayTrans = grouped[date];
-        doc.font('Helvetica-Bold').fontSize(10)
+        doc.font('Helvetica-Bold').fontSize(11).fillColor('#374151')
           .text(`Date: ${date}`, { continued: false })
-          .moveDown(0.3);
+          .moveDown(0.35).fillColor('#000000');
 
         const table = { ...tableLayout };
         table.rows = [];
@@ -280,15 +312,15 @@ const transactionController = {
       }
 
       checkAndAddNewPage();
-      doc.moveDown(0.3);
-      doc.font('Helvetica-Bold').fontSize(10)
-        .text('Grand Totals', { align: 'center' })
-        .moveDown(0.3);
+      doc.moveDown(0.6);
+      doc.font('Helvetica-Bold').fontSize(13).fillColor('#1e3a5f')
+        .text('Summary', { align: 'center' })
+        .moveDown(0.4).fillColor('#000000');
 
       const grandTable = {
         ...tableLayout,
         headers: ['Total Ton', 'RO Ton', 'RO Price', 'Over Ton', 'Over Price', 'Total Price'],
-        columnWidths: [86, 86, 86, 86, 86, 90],
+        columnWidths: [82, 82, 85, 82, 85, 99],
         rows: [[
           grandTotals.TotalTon.toFixed(2),
           grandTotals.RoTon.toFixed(2),
@@ -301,9 +333,13 @@ const transactionController = {
 
       await doc.table(grandTable, {
         ...tableSettings,
-        width: 520,
-        padding: [5, 3, 5, 3]
+        width: tableWidth,
+        prepareHeader: () => doc.font('Helvetica-Bold').fontSize(9).fillColor('#1f2937'),
+        prepareRow: () => doc.font('Helvetica-Bold').fontSize(9)
       });
+
+      doc.font('Helvetica').fontSize(8).fillColor('#9ca3af')
+        .text(`Generated on ${new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}`, leftMargin, doc.page.height - 40, { align: 'left' });
 
       doc.end();
     } catch (error) {
@@ -419,13 +455,14 @@ const transactionController = {
   downloadTransactionsExcel: async (req, res) => {
     try {
       const { startDate, endDate, firmId } = req.query;
-      const query = {
-        TransactionDate: {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate)
-        }
-      };
 
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Start date and end date are required." });
+      }
+
+      const query = {
+        TransactionDate: buildDateRangeQuery(startDate, endDate)
+      };
       if (firmId) query.FirmID = firmId;
 
       const transactions = await Transaction.find(query)

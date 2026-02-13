@@ -7,6 +7,14 @@ const formatDate = (date) => {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(2)}`;
 };
 
+const buildDateRangeQuery = (startDate, endDate) => {
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
+  return { TransactionDate: { $gte: start, $lte: end } };
+};
+
 const calculateDailyTotals = (transactions) => {
   return transactions.reduce((totals, t) => ({
     TotalTon: totals.TotalTon + Number(t.TotalTon),
@@ -68,14 +76,13 @@ const quickTransactionController = {
       const totalAmount = +(roAmount + openAmount).toFixed(2);
       const totalTon = +(Number(RoTon) + Number(OpenTon)).toFixed(2);
 
-      // Validate payment amounts
+      // Payment amounts (can be less than total - remaining may be with friend, etc.)
       const cashAmt = Number(CashAmount) || 0;
       const onlineAmt = Number(OnlineAmount) || 0;
       const totalPayment = +(cashAmt + onlineAmt).toFixed(2);
-
-      if (totalPayment !== totalAmount) {
+      if (totalPayment > totalAmount) {
         return res.status(400).json({
-          message: `Payment mismatch. Total Amount: ${totalAmount}, Cash + Online: ${totalPayment}. Difference: ${(totalAmount - totalPayment).toFixed(2)}`
+          message: `Payment cannot exceed total. Total Amount: ${totalAmount}, Cash + Online: ${totalPayment}.`
         });
       }
 
@@ -95,7 +102,7 @@ const quickTransactionController = {
         OpenTonPrice: +Number(OpenTonPrice).toFixed(2),
         RoAmount: roAmount,
         OpenAmount: openAmount,
-        TotalAmount: totalAmount,
+        TotalAmount: totalPayment,
         CashAmount: +cashAmt.toFixed(2),
         OnlineAmount: +onlineAmt.toFixed(2),
         OnlinePaymentDetails: onlineAmt > 0 ? OnlinePaymentDetails : null,
@@ -174,14 +181,13 @@ const quickTransactionController = {
       const totalAmount = +(roAmount + openAmount).toFixed(2);
       const totalTon = +(Number(RoTon) + Number(OpenTon)).toFixed(2);
 
-      // Validate payment amounts
+      // Payment amounts (can be less than total - remaining may be with friend, etc.)
       const cashAmt = Number(CashAmount) || 0;
       const onlineAmt = Number(OnlineAmount) || 0;
       const totalPayment = +(cashAmt + onlineAmt).toFixed(2);
-
-      if (totalPayment !== totalAmount) {
+      if (totalPayment > totalAmount) {
         return res.status(400).json({
-          message: `Payment mismatch. Total Amount: ${totalAmount}, Cash + Online: ${totalPayment}. Difference: ${(totalAmount - totalPayment).toFixed(2)}`
+          message: `Payment cannot exceed total. Total Amount: ${totalAmount}, Cash + Online: ${totalPayment}.`
         });
       }
 
@@ -203,7 +209,7 @@ const quickTransactionController = {
           OpenTonPrice: +Number(OpenTonPrice).toFixed(2),
           RoAmount: roAmount,
           OpenAmount: openAmount,
-          TotalAmount: totalAmount,
+          TotalAmount: totalPayment,
           CashAmount: +cashAmt.toFixed(2),
           OnlineAmount: +onlineAmt.toFixed(2),
           OnlinePaymentDetails: onlineAmt > 0 ? OnlinePaymentDetails : null,
@@ -403,19 +409,13 @@ const quickTransactionController = {
   // Download PDF report
   downloadQuickTransactionsPdf: async (req, res) => {
     try {
-      const { startDate, endDate } = req.query;
+      const { startDate, endDate, roTonPrice, openTonPrice } = req.query;
 
       if (!startDate || !endDate) {
         return res.status(400).json({ message: "Start date and end date are required." });
       }
 
-      const query = {
-        TransactionDate: {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate)
-        }
-      };
-
+      const query = buildDateRangeQuery(startDate, endDate);
       const transactions = await QuickTransaction.find(query)
         .sort({ TransactionDate: -1 });
 
@@ -423,10 +423,20 @@ const quickTransactionController = {
         return res.status(404).json({ message: "No quick transactions found in the given date range." });
       }
 
+      let useCustomPrices = false;
+      let customPrices = null;
+      if (roTonPrice && openTonPrice) {
+        useCustomPrices = true;
+        customPrices = {
+          roTonPrice: Number(roTonPrice) || 0,
+          openTonPrice: Number(openTonPrice) || 0
+        };
+      }
+
       const doc = new PDFDocument({
         size: 'A4',
         layout: 'landscape',
-        margin: { top: 40, bottom: 40, left: 30, right: 30 },
+        margin: { top: 50, bottom: 50, left: 40, right: 40 },
         bufferPages: true
       });
 
@@ -438,62 +448,71 @@ const quickTransactionController = {
         res.send(Buffer.concat(chunks));
       });
 
+      const tableWidth = 715;
+      const leftMargin = 40;
+
       const addPageHeader = () => {
-        doc.font('Helvetica-Bold').fontSize(14)
+        doc.moveDown(0.5);
+        doc.font('Helvetica-Bold').fontSize(18).fillColor('#1e3a5f')
           .text('Quick Transaction Report', { align: 'center' })
+          .moveDown(0.2);
+        doc.font('Helvetica').fontSize(11).fillColor('#4b5563')
+          .text(`Period: ${formatDate(new Date(startDate))} — ${formatDate(new Date(endDate))}`, { align: 'center' })
           .moveDown(0.3);
-        doc.font('Helvetica').fontSize(10)
-          .text(`Date Range: ${formatDate(new Date(startDate))} - ${formatDate(new Date(endDate))}`,
-            { align: 'center' })
-          .moveDown(0.5);
+        doc.moveTo(leftMargin, doc.y).lineTo(leftMargin + tableWidth, doc.y)
+          .strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+        doc.moveDown(0.6).fillColor('#000000');
       };
 
       addPageHeader();
 
-      // Add custom pricing note if used
       if (useCustomPrices) {
-        doc.font('Helvetica-Oblique').fontSize(9)
-          .fillColor('#666666')
-          .text(`* Recalculated with custom prices: RO Ton = ₹${customPrices.roTonPrice}, Open Ton = ₹${customPrices.openTonPrice}`,
-            { align: 'center' })
-          .fillColor('#000000')
-          .moveDown(0.3);
+        doc.font('Helvetica-Oblique').fontSize(9).fillColor('#6b7280')
+          .text(`* Amounts recalculated with custom rates: RO Ton = Rs. ${customPrices.roTonPrice}, Open Ton = Rs. ${customPrices.openTonPrice}`, { align: 'center' })
+          .fillColor('#000000').moveDown(0.4);
       }
 
       const tableSettings = {
-        prepareHeader: () => doc.font('Helvetica-Bold').fontSize(7),
-        prepareRow: () => doc.font('Helvetica').fontSize(7),
-        width: 760,
-        padding: [3, 2, 3, 2],
-        divider: {
-          header: { disabled: false, width: 1, opacity: 1 },
-          horizontal: { disabled: false, width: 0.5, opacity: 0.5 }
+        prepareHeader: () => doc.font('Helvetica-Bold').fontSize(8).fillColor('#1f2937'),
+        prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
+          const isTotalRow = row && row.some && row.some(c => c === 'Total');
+          doc.font(isTotalRow ? 'Helvetica-Bold' : 'Helvetica').fontSize(8).fillColor('#000000');
+          if (doc.addBackground && indexColumn === 0 && !isTotalRow && indexRow % 2 === 1) {
+            doc.addBackground(rectRow, '#f9fafb', 1);
+          }
         },
-        x: 30,
-        columnSpacing: 2
+        width: tableWidth,
+        padding: [6, 8, 6, 8],
+        columnSpacing: 4,
+        minRowHeight: 22,
+        divider: {
+          header: { disabled: false, width: 1, opacity: 0.2 },
+          horizontal: { disabled: false, width: 0.3, opacity: 0.4 }
+        },
+        x: leftMargin
       };
 
       const tableLayout = {
-        headers: ['Sr.', 'Vehicle', 'RO Ton', 'Open Ton', 'Total Ton', 'RO Price', 'Open Price', 'Total Amt', 'Cash', 'Online', 'Online Details'],
+        headers: ['Sr.', 'Vehicle', 'RO Ton', 'Open Ton', 'Total Ton', 'RO Amt', 'Open Amt', 'Received', 'Cash', 'Online', 'Details'],
         rows: [],
-        columnWidths: [30, 70, 55, 55, 55, 60, 60, 65, 65, 65, 180],
-        headerColor: '#eeeeee',
+        columnWidths: [28, 68, 52, 52, 52, 58, 58, 62, 62, 62, 175],
+        headerColor: '#e5e7eb',
         headerOpacity: 1,
         headerFont: 'Helvetica-Bold',
         rowFont: 'Helvetica',
-        fontSize: 7
+        fontSize: 8
       };
 
       const checkAndAddNewPage = () => {
         const pageHeight = 560;
         const currentHeight = doc.y;
         const remainingHeight = pageHeight - currentHeight;
-        const estimatedTableHeight = (tableLayout.rows.length + 2) * 18;
+        const estimatedTableHeight = (tableLayout.rows.length + 2) * 24;
 
-        if (remainingHeight < estimatedTableHeight || doc.y > 480) {
-          doc.addPage();
+        if (remainingHeight < estimatedTableHeight || doc.y > 500) {
+          doc.addPage({ layout: 'landscape', size: 'A4', margin: { top: 50, bottom: 50, left: 40, right: 40 } });
           addPageHeader();
-          doc.y = 100;
+          doc.y = 95;
         }
       };
 
@@ -504,22 +523,17 @@ const quickTransactionController = {
 
         let transaction = t.toObject();
 
-        // Recalculate amounts if custom prices provided
+        // Recalculate Ro/Open amounts if custom prices provided (TotalAmount = received stays unchanged)
         if (useCustomPrices) {
           const roTon = Number(t.RoTon);
           const openTon = Number(t.OpenTon);
           const recalculatedRoAmount = +(roTon * customPrices.roTonPrice).toFixed(2);
           const recalculatedOpenAmount = +(openTon * customPrices.openTonPrice).toFixed(2);
-          const recalculatedTotalAmount = +(recalculatedRoAmount + recalculatedOpenAmount).toFixed(2);
 
           transaction = {
             ...transaction,
             RoAmount: recalculatedRoAmount,
-            OpenAmount: recalculatedOpenAmount,
-            TotalAmount: recalculatedTotalAmount,
-            // Keep original cash/online split ratio
-            CashAmount: transaction.CashAmount,
-            OnlineAmount: transaction.OnlineAmount
+            OpenAmount: recalculatedOpenAmount
           };
         }
 
@@ -550,9 +564,9 @@ const quickTransactionController = {
         checkAndAddNewPage();
 
         const dayTrans = grouped[date];
-        doc.font('Helvetica-Bold').fontSize(10)
+        doc.font('Helvetica-Bold').fontSize(11).fillColor('#374151')
           .text(`Date: ${date}`, { continued: false })
-          .moveDown(0.3);
+          .moveDown(0.35).fillColor('#000000');
 
         const table = { ...tableLayout };
         table.rows = [];
@@ -604,14 +618,14 @@ const quickTransactionController = {
 
       // Grand totals section
       checkAndAddNewPage();
-      doc.moveDown(0.5);
-      doc.font('Helvetica-Bold').fontSize(12)
-        .text('Grand Totals', { align: 'center' })
-        .moveDown(0.3);
+      doc.moveDown(0.6);
+      doc.font('Helvetica-Bold').fontSize(13).fillColor('#1e3a5f')
+        .text('Summary', { align: 'center' })
+        .moveDown(0.4).fillColor('#000000');
 
       const grandTable = {
-        headers: ['Total Ton', 'RO Ton', 'Open Ton', 'RO Amt', 'Open Amt', 'Total Amt', 'Cash', 'Online'],
-        columnWidths: [95, 95, 95, 95, 95, 95, 95, 95],
+        headers: ['Total Ton', 'RO Ton', 'Open Ton', 'RO Amt', 'Open Amt', 'Received', 'Cash', 'Online'],
+        columnWidths: [82, 82, 82, 82, 82, 93, 93, 93],
         rows: [[
           grandTotals.TotalTon.toFixed(2),
           grandTotals.RoTon.toFixed(2),
@@ -626,20 +640,29 @@ const quickTransactionController = {
 
       await doc.table(grandTable, {
         ...tableSettings,
-        width: 760,
-        prepareHeader: () => doc.font('Helvetica-Bold').fontSize(9),
+        width: tableWidth,
+        prepareHeader: () => doc.font('Helvetica-Bold').fontSize(9).fillColor('#1f2937'),
         prepareRow: () => doc.font('Helvetica-Bold').fontSize(9)
       });
 
       // Payment summary
-      doc.moveDown(0.5);
-      doc.font('Helvetica-Bold').fontSize(10)
-        .text('Payment Summary:', { align: 'left' })
-        .moveDown(0.2);
-      doc.font('Helvetica').fontSize(9)
-        .text(`Total Collection: ${grandTotals.TotalAmount.toFixed(2)}`)
-        .text(`Cash Collection: ${grandTotals.CashAmount.toFixed(2)}`)
-        .text(`Online Collection: ${grandTotals.OnlineAmount.toFixed(2)}`);
+      const totalReceived = grandTotals.CashAmount + grandTotals.OnlineAmount;
+      doc.moveDown(0.6);
+      const summaryY = doc.y;
+      doc.roundedRect(leftMargin, summaryY, tableWidth, 72, 4)
+        .fillAndStroke('#f8fafc', '#e2e8f0');
+      doc.y = summaryY + 14;
+      doc.x = leftMargin + 16;
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#374151')
+        .text('Payment Summary')
+        .moveDown(0.35);
+      doc.font('Helvetica').fontSize(9).fillColor('#4b5563')
+        .text(`Total Received (Cash + Online):  Rs. ${totalReceived.toFixed(2)}`)
+        .text(`Cash Collection:                Rs. ${grandTotals.CashAmount.toFixed(2)}`)
+        .text(`Online Collection:              Rs. ${grandTotals.OnlineAmount.toFixed(2)}`);
+
+      doc.font('Helvetica').fontSize(8).fillColor('#9ca3af')
+        .text(`Generated on ${new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}`, leftMargin, doc.page.height - 40, { align: 'left' });
 
       doc.end();
     } catch (error) {
@@ -656,13 +679,7 @@ const quickTransactionController = {
         return res.status(400).json({ message: "Start date and end date are required." });
       }
 
-      const query = {
-        TransactionDate: {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate)
-        }
-      };
-
+      const query = buildDateRangeQuery(startDate, endDate);
       const transactions = await QuickTransaction.find(query)
         .sort({ TransactionDate: -1 });
 
@@ -688,14 +705,11 @@ const quickTransactionController = {
       const data = transactions.map(t => {
         let roAmount = Number(t.RoAmount);
         let openAmount = Number(t.OpenAmount);
-        let totalAmount = Number(t.TotalAmount);
-
-        // Recalculate if custom prices provided
         if (useCustomPrices) {
           roAmount = +(Number(t.RoTon) * customPrices.roTonPrice).toFixed(2);
           openAmount = +(Number(t.OpenTon) * customPrices.openTonPrice).toFixed(2);
-          totalAmount = +(roAmount + openAmount).toFixed(2);
         }
+        const amountReceived = Number(t.TotalAmount);
 
         return {
           'Date': new Date(t.TransactionDate).toLocaleDateString(),
@@ -709,7 +723,7 @@ const quickTransactionController = {
           'Open Ton Price': useCustomPrices ? customPrices.openTonPrice : Number(t.OpenTonPrice),
           'RO Amount': roAmount,
           'Open Amount': openAmount,
-          'Total Amount': totalAmount,
+          'Amount Received': amountReceived,
           'Cash Amount': Number(t.CashAmount),
           'Online Amount': Number(t.OnlineAmount),
           'Online Details': t.OnlinePaymentDetails || '-',
@@ -721,41 +735,30 @@ const quickTransactionController = {
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
 
       // Summary sheet
-      const totals = transactions.reduce((acc, t) => {
-        let totalAmount = Number(t.TotalAmount);
+      const totals = transactions.reduce((acc, t) => ({
+        totalTon: acc.totalTon + Number(t.TotalTon),
+        roTon: acc.roTon + Number(t.RoTon),
+        openTon: acc.openTon + Number(t.OpenTon),
+        cashAmount: acc.cashAmount + Number(t.CashAmount),
+        onlineAmount: acc.onlineAmount + Number(t.OnlineAmount)
+      }), { totalTon: 0, roTon: 0, openTon: 0, cashAmount: 0, onlineAmount: 0 });
 
-        // Recalculate if custom prices provided
-        if (useCustomPrices) {
-          const roAmount = Number(t.RoTon) * customPrices.roTonPrice;
-          const openAmount = Number(t.OpenTon) * customPrices.openTonPrice;
-          totalAmount = +(roAmount + openAmount).toFixed(2);
-        }
-
-        return {
-          totalTon: acc.totalTon + Number(t.TotalTon),
-          roTon: acc.roTon + Number(t.RoTon),
-          openTon: acc.openTon + Number(t.OpenTon),
-          totalAmount: acc.totalAmount + totalAmount,
-          cashAmount: acc.cashAmount + Number(t.CashAmount),
-          onlineAmount: acc.onlineAmount + Number(t.OnlineAmount)
-        };
-      }, { totalTon: 0, roTon: 0, openTon: 0, totalAmount: 0, cashAmount: 0, onlineAmount: 0 });
-
+      const totalReceived = totals.cashAmount + totals.onlineAmount;
       const summaryData = [
         { 'Metric': 'Total Transactions', 'Value': transactions.length },
         { 'Metric': 'Total Ton', 'Value': totals.totalTon.toFixed(2) },
         { 'Metric': 'RO Ton', 'Value': totals.roTon.toFixed(2) },
         { 'Metric': 'Open Ton', 'Value': totals.openTon.toFixed(2) },
-        { 'Metric': 'Total Amount', 'Value': totals.totalAmount.toFixed(2) },
+        { 'Metric': 'Total Received (Cash + Online)', 'Value': totalReceived.toFixed(2) },
         { 'Metric': 'Cash Amount', 'Value': totals.cashAmount.toFixed(2) },
         { 'Metric': 'Online Amount', 'Value': totals.onlineAmount.toFixed(2) },
-        { 'Metric': 'Cash %', 'Value': totals.totalAmount > 0 ? ((totals.cashAmount / totals.totalAmount) * 100).toFixed(2) + '%' : '0%' },
-        { 'Metric': 'Online %', 'Value': totals.totalAmount > 0 ? ((totals.onlineAmount / totals.totalAmount) * 100).toFixed(2) + '%' : '0%' }
+        { 'Metric': 'Cash %', 'Value': totalReceived > 0 ? ((totals.cashAmount / totalReceived) * 100).toFixed(2) + '%' : '0%' },
+        { 'Metric': 'Online %', 'Value': totalReceived > 0 ? ((totals.onlineAmount / totalReceived) * 100).toFixed(2) + '%' : '0%' }
       ];
 
       if (useCustomPrices) {
-        summaryData.push({ 'Metric': 'Custom RO Ton Price', 'Value': `₹${customPrices.roTonPrice}` });
-        summaryData.push({ 'Metric': 'Custom Open Ton Price', 'Value': `₹${customPrices.openTonPrice}` });
+        summaryData.push({ 'Metric': 'Custom RO Ton Price', 'Value': `Rs. ${customPrices.roTonPrice}` });
+        summaryData.push({ 'Metric': 'Custom Open Ton Price', 'Value': `Rs. ${customPrices.openTonPrice}` });
       }
 
       const summarySheet = XLSX.utils.json_to_sheet(summaryData);
