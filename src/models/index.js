@@ -8,6 +8,7 @@ const Vehicle = require('./vehicle');
 const User = require('./user');
 const Note = require('./note');
 const QuickTransaction = require('./quickTransaction');
+const LoanAudit = require('./loanAudit');
 
 // Check for required environment variable
 if (!process.env.MONGO_URI) {
@@ -48,5 +49,6 @@ module.exports = {
   Vehicle,
   User,
   Note,
-  QuickTransaction
+  QuickTransaction,
+  LoanAudit
 };
