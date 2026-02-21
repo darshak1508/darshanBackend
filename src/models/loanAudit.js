@@ -25,6 +25,11 @@ const loanAuditSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    DeductionBank: {
+        type: String,
+        required: false,
+        trim: true
+    },
     Parameters: {
         loan: { type: Number, required: true },
         rate: { type: Number, required: true },

@@ -4,7 +4,7 @@ const loanAuditController = {
     // Create or Update a loan audit profile
     saveLoanAudit: async (req, res) => {
         try {
-            const { ClientName, LoanType, LoanName, Parameters } = req.body;
+            const { ClientName, LoanType, LoanName, Parameters, DeductionBank } = req.body;
             const UserID = req.user.UserID;
 
             if (!ClientName || !LoanType || !LoanName || !Parameters) {
@@ -17,6 +17,7 @@ const loanAuditController = {
             if (audit) {
                 audit.LoanType = LoanType;
                 audit.Parameters = Parameters;
+                audit.DeductionBank = DeductionBank;
                 audit.UpdatedAt = Date.now();
                 await audit.save();
                 return res.json(audit);
@@ -27,7 +28,8 @@ const loanAuditController = {
                 ClientName,
                 LoanType,
                 LoanName,
-                Parameters
+                Parameters,
+                DeductionBank
             });
 
             await audit.save();
