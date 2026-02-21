@@ -1,7 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cron = require('node-cron');
 const { connectDB } = require('./models');
+const { runLoanReminderJob } = require('./jobs/loanReminderJob');
 const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/authRoutes');
 const firmRoutes = require('./routes/firmRoutes');
@@ -47,6 +49,15 @@ async function startServer() {
   try {
     // Connect to MongoDB
     await connectDB();
+
+    // Schedule loan EMI reminder (3 days before due) – daily at 8:00 AM
+    const cronSchedule = process.env.LOAN_REMINDER_CRON || '0 8 * * *';
+    if (cron.validate(cronSchedule)) {
+      cron.schedule(cronSchedule, () => {
+        runLoanReminderJob().catch(err => console.error('Loan reminder job error:', err));
+      });
+      console.log('Loan EMI reminder job scheduled (3 days before due date).');
+    }
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);

@@ -8,6 +8,9 @@ router.post('/', loanAuditController.saveLoanAudit);
 // Get all loan audit profiles
 router.get('/', loanAuditController.getLoanAudits);
 
+// Manually run EMI reminder job (sends actual reminder emails for loans due in 3 days)
+router.post('/reminder/run', loanAuditController.runReminderJob);
+
 // Get a single loan audit profile
 router.get('/:id', loanAuditController.getLoanAudit);
 

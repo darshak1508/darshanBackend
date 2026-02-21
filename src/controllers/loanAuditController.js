@@ -1,4 +1,5 @@
 const { LoanAudit } = require('../models');
+const { runLoanReminderJob } = require('../jobs/loanReminderJob');
 
 const loanAuditController = {
     // Create or Update a loan audit profile
@@ -81,6 +82,24 @@ const loanAuditController = {
             }
 
             res.json({ message: "Loan Audit profile deleted successfully." });
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    },
+
+    // Manually run EMI reminder job – sends actual reminder emails for loans whose EMI is in 3 days
+    runReminderJob: async (req, res) => {
+        try {
+            const result = await runLoanReminderJob();
+            const { matched = 0, sent = 0, targetDate } = result || {};
+            res.json({
+                message: matched === 0
+                    ? `No loans found with EMI date in 3 days (looking for due date: ${targetDate || 'N/A'}). Add a loan with emiDate = that date and try again.`
+                    : `Reminder job completed. ${sent} email(s) sent for ${matched} loan(s) due on ${targetDate || 'N/A'}.`,
+                loansDueIn3Days: matched,
+                emailsSent: sent,
+                targetDueDate: targetDate
+            });
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
