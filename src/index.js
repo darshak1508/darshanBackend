@@ -13,6 +13,7 @@ const vehicleRoutes = require('./routes/vehicleRoutes');
 const noteRoutes = require('./routes/noteRoutes');
 const quickTransactionRoutes = require('./routes/quickTransactionRoutes');
 const loanAuditRoutes = require('./routes/loanAuditRoutes');
+const interestRoutes = require('./routes/interestRoutes');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/vehicle', authMiddleware, vehicleRoutes);
 app.use('/api/note', authMiddleware, noteRoutes);
 app.use('/api/quick-transaction', authMiddleware, quickTransactionRoutes);
 app.use('/api/loan-audit', authMiddleware, loanAuditRoutes);
+app.use('/api/interest', authMiddleware, interestRoutes);
 
 const PORT = process.env.PORT || 3000;
 
