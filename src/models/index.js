@@ -10,6 +10,7 @@ const Note = require('./note');
 const QuickTransaction = require('./quickTransaction');
 const LoanAudit = require('./loanAudit');
 const InterestEntry = require('./interestEntry');
+const LandEntry = require('./landEntry');
 const OtpSession = require('./otpSession');
 
 // Check for required environment variable
@@ -54,5 +55,6 @@ module.exports = {
   QuickTransaction,
   LoanAudit,
   InterestEntry,
+  LandEntry,
   OtpSession
 };
